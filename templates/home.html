@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- HERO SECTION -->
+<section class="hero">
+    <div class="hero-text">
+        <h1>New Collection</h1>
+        <p>Discover the latest trends in tech & fashion</p>
+        <button>Shop Now</button>
+    </div>
+</section>
+
+<!-- CATEGORY SECTION -->
+<section class="categories">
+
+    <div class="category">
+        <img src="{{ url_for('static', filename='images/laptop.jpg') }}">
+        <div class="category-name">Laptop</div>
+    </div>
+
+    <div class="category">
+        <img src="{{ url_for('static', filename='images/phone.jpg') }}">
+        <div class="category-name">Cellphone</div>
+    </div>
+
+    <div class="category">
+        <img src="{{ url_for('static', filename='images/shoes.jpg') }}">
+        <div class="category-name">Shoes</div>
+    </div>
+
+    <div class="category">
+        <img src="{{ url_for('static', filename='images/watch.jpg') }}">
+        <div class="category-name">Watch</div>
+    </div>
+
+</section>
+
+{% endblock %}

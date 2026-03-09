@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SalesHub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header class="navbar">
+    <div class="logo">SalesHub</div>
+
+    <nav class="menu">
+        <a href="/">Home</a>
+        <a href="#">Shop</a>
+        <a href="#">Contact</a>
+        <a href="#">Cart</a>
+    </nav>
+</header>
+
+{% block content %}{% endblock %}
+
+<footer class="footer">
+    <div class="footer-container">
+        <p>&copy; 2026 SalesHub. All rights reserved.</p>
+</div>
+</footer>
+
+</body>
+</html>
