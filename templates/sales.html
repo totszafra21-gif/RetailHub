@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Sales (POS)</h2>
+
+<form method="POST" class="row g-2 mb-4">
+    <div class="col">
+        <select name="product_id" class="form-control">
+            {% for p in products %}
+            <option value="{{p.id}}">
+                {{p.name}} - ₱{{p.price}}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col">
+        <input name="quantity" class="form-control" placeholder="Quantity">
+    </div>
+
+    <div class="col">
+        <button class="btn btn-success">Sell</button>
+    </div>
+</form>
+
+<table class="table table-striped">
+<tr>
+<th>Product</th>
+<th>Qty</th>
+<th>Total</th>
+<th>Date</th>
+</tr>
+
+{% for s in sales %}
+<tr>
+<td>{{s.name}}</td>
+<td>{{s.quantity}}</td>
+<td>₱{{s.total}}</td>
+<td>{{s.date}}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+{% endblock %}

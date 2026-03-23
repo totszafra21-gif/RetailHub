@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+    body {
+        background: C3BBB3;
+        min-height: 100vh;
+    }
+
+    .login-wrapper {
+        min-height: 90vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .login-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 40px;
+        width: 100%;
+        max-width: 420px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    .login-logo {
+        font-size: 40px;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+
+    .login-title {
+        color: white;
+        font-size: 26px;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 5px;
+    }
+
+    .login-subtitle {
+        color: rgba(255,255,255,0.5);
+        text-align: center;
+        font-size: 14px;
+        margin-bottom: 30px;
+    }
+
+    .form-control {
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.15);
+        color: white;
+        border-radius: 10px;
+        padding: 12px 15px;
+    }
+
+    .form-control::placeholder {
+        color: rgba(255,255,255,0.4);
+    }
+
+    .form-control:focus {
+        background: rgba(255,255,255,0.12);
+        border-color: #e94560;
+        color: white;
+        box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2);
+    }
+
+    .btn-login {
+        background: linear-gradient(135deg, #e94560, #c0392b);
+        border: none;
+        border-radius: 10px;
+        padding: 12px;
+        font-size: 16px;
+        font-weight: bold;
+        color: white;
+        width: 100%;
+        transition: 0.3s;
+    }
+
+    .btn-login:hover {
+        background: linear-gradient(135deg, #c0392b, #e94560);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(233, 69, 96, 0.4);
+    }
+
+    .signup-link {
+        color: rgba(255,255,255,0.6);
+        text-align: center;
+        margin-top: 20px;
+        font-size: 14px;
+    }
+
+    .signup-link a {
+        color: #e94560;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    .signup-link a:hover {
+        text-decoration: underline;
+    }
+
+    .divider {
+        border-color: rgba(255,255,255,0.1);
+        margin: 20px 0;
+    }
+</style>
+
+<div class="login-wrapper">
+    <div class="login-card">
+
+        <div class="login-logo">🛍️</div>
+        <div class="login-title">Welcome Back</div>
+        <div class="login-subtitle">Login to your RetailHub account</div>
+
+        <form method="POST">
+
+            <div class="mb-3">
+                <input type="text" name="username" class="form-control" placeholder="👤  Username" required>
+            </div>
+
+            <div class="mb-3">
+                <input type="password" name="password" class="form-control" placeholder="🔒  Password" required>
+            </div>
+
+            <button class="btn-login mt-2">Login</button>
+
+        </form>
+
+        <hr class="divider">
+
+        <p class="signup-link">
+            Don't have an Account? <a href="/signup">Sign Up</a>
+        </p>
+
+    </div>
+</div>
+
+{% endblock %}

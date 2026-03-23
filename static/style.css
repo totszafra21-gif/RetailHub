@@ -6,7 +6,7 @@
 }
 
 body {
-    background-color: #f4f4f4;
+    background: rgba(0, 0, 0, 0.4);
 }
 
 /* NAVBAR */
@@ -37,8 +37,8 @@ body {
 
 /* HERO */
 .hero {
-    height: 450px;
-    background: url("../images/banner.jpg") center center/cover no-repeat;
+    height: 90vh;
+    background: url("https://images.unsplash.com/photo-1512436991641-6745cdb1723f") no-repeat center center/cover;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -48,37 +48,57 @@ body {
 .hero::before {
     content: "";
     position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.4);
+    background: rgba(0, 0, 0, 0.4);
 }
 
-.hero-text {
+.hero-content {
     position: relative;
-    color: white;
+    z-index: 2;
     text-align: center;
+    color: white;
 }
 
-.hero-text h1 {
-    font-size: 55px;
-    font-weight: 300;
+.hero h1 {
+    font-size: 60px;
+    font-weight: bold;
+    color: white;
 }
 
-.hero-text p {
-    margin: 15px 0;
-    font-size: 18px;
+.hero p {
+    font-size: 20px;
+    color: white;
 }
 
-.hero-text button {
-    padding: 12px 30px;
-    background: white;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
+/* PRODUCTS */
+.product-section {
+    padding: 60px;
 }
 
-.hero-text button:hover {
-    background: #ddd;
+.product-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: 0.3s;
+}
+
+.product-card img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.product-card h5 {
+    margin-top: 10px;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
 }
 
 /* CATEGORIES */
@@ -113,13 +133,39 @@ body {
     position: absolute;
     bottom: 0;
     width: 100%;
-    background: rgba(0,0,0,0.6);
+    background: rgba(0, 0, 0, 0.6);
     color: white;
     text-align: center;
     padding: 12px;
     font-size: 16px;
 }
 
+/* HERO SECTION */
+.hero-section {
+    height: 90vh;
+    background: url("https://images.unsplash.com/photo-1512436991641-6745cdb1723f") no-repeat center center/cover;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.hero-section div {
+    position: relative;
+    z-index: 1;
+}
+
+/* FOOTER */
 .footer {
     background-color: #222;
     color: white;

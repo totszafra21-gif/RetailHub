@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Products</h2>
+
+<form method="POST" class="row g-2 mb-4">
+    <div class="col"><input name="name" class="form-control" placeholder="Product name"></div>
+    <div class="col"><input name="price" class="form-control" placeholder="Price"></div>
+    <div class="col"><input name="stock" class="form-control" placeholder="Stock"></div>
+    <div class="col"><button class="btn btn-primary">Add</button></div>
+</form>
+
+<table class="table table-bordered">
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Price</th>
+<th>Stock</th>
+</tr>
+
+{% for p in products %}
+<tr>
+<td>{{p.id}}</td>
+<td>{{p.name}}</td>
+<td>{{p.price}}</td>
+<td>{{p.stock}}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+{% endblock %}
