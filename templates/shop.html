@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h3 class="fw-bold mb-4">🛒 Shop</h3>
+
+    <div class="row g-4">
+
+        {% for p in products %}
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm" style="border-radius:15px; overflow:hidden;">
+
+                <img src="{{ url_for('static', filename=p['image'] if p['image'] else 'images/default.jpg') }}"
+                     class="card-img-top"
+                     style="height:220px; object-fit:cover;">
+
+                <div class="card-body text-center d-flex flex-column justify-content-between">
+                    <div>
+                        <h5 class="fw-bold mb-1">{{ p['name'] }}</h5>
+                        <p class="text-danger fw-bold fs-5">₱{{ p['price'] }}</p>
+                    </div>
+                    <a href="/add_to_cart/{{ p['id'] }}" class="btn btn-dark w-100 mt-2" style="border-radius:10px;">
+                        🛒 Add to Cart
+                    </a>
+                </div>
+
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center">
+            <p class="text-muted">No products available</p>
+        </div>
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endblock %}
