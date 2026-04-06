@@ -116,6 +116,10 @@
 
         <form method="POST">
 
+            {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
+
             <div class="mb-3">
                 <input type="text" name="username" class="form-control" placeholder="👤  Username" required>
             </div>

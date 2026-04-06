@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h3 class="fw-bold mb-4">📦 My Orders</h3>
+
+    {% if orders %}
+
+    <div class="row g-4">
+        {% for order in orders %}
+        <div class="col-12">
+            <div class="card border-0 shadow-sm" style="border-radius:15px;">
+                <div class="card-body p-4">
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6 class="fw-bold mb-0">Order #{{ order['id'] }}</h6>
+                            <small class="text-muted">{{ order['created_at'][:10] }}</small>
+                        </div>
+                        <div>
+                            {% if order['status'] == 'Pending' %}
+                            <span class="badge bg-warning text-dark fs-6">⏳ Pending</span>
+                            {% elif order['status'] == 'Delivered' %}
+                            <span class="badge bg-info fs-6">🚚 Delivered</span>
+                            {% elif order['status'] == 'Completed' %}
+                            <span class="badge bg-success fs-6">✅ Completed</span>
+                            {% elif order['status'] == 'Cancelled' %}
+                            <span class="badge bg-danger fs-6">❌ Cancelled</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark fs-6">⏳ Pending</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-1"><span class="text-muted">📍 Address:</span> <strong>{{ order['address'] }}</strong></p>
+                            <p class="mb-1"><span class="text-muted">📞 Phone:</span> <strong>{{ order['phone'] }}</strong></p>
+                            <p class="mb-0"><span class="text-muted">💳 Payment:</span>
+                                <strong>{% if order['payment'] == 'cod' %}💵 Cash on Delivery{% else %}📱 GCash{% endif %}</strong>
+                            </p>
+                        </div>
+                        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                            <p class="text-muted mb-1">Total Amount</p>
+                            <h4 class="fw-bold text-danger">₱{{ order['total'] }}</h4>
+                        </div>
+                    </div>
+
+                    <!-- STATUS TRACKER -->
+                    <hr>
+                    <div class="d-flex justify-content-between text-center mt-2">
+
+                        <div>
+                            <div style="font-size:24px;">🛒</div>
+                            <small class="fw-bold {% if order['status'] in ['Pending','Delivered','Completed'] %}text-dark{% else %}text-muted{% endif %}">Ordered</small>
+                        </div>
+
+                        <div class="flex-grow-1 d-flex align-items-center px-2">
+                            <div class="w-100" style="height:3px; background:{% if order['status'] in ['Delivered','Completed'] %}#198754{% else %}#dee2e6{% endif %};"></div>
+                        </div>
+
+                        <div>
+                            <div style="font-size:24px;">🚚</div>
+                            <small class="fw-bold {% if order['status'] in ['Delivered','Completed'] %}text-dark{% else %}text-muted{% endif %}">Delivered</small>
+                        </div>
+
+                        <div class="flex-grow-1 d-flex align-items-center px-2">
+                            <div class="w-100" style="height:3px; background:{% if order['status'] == 'Completed' %}#198754{% else %}#dee2e6{% endif %};"></div>
+                        </div>
+
+                        <div>
+                            <div style="font-size:24px;">✅</div>
+                            <small class="fw-bold {% if order['status'] == 'Completed' %}text-dark{% else %}text-muted{% endif %}">Completed</small>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="text-center mt-5">
+        <p class="text-muted fs-5">You have no orders yet.</p>
+        <a href="/shop" class="btn btn-dark mt-2">Go to Shop</a>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

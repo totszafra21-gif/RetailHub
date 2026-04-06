@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .admin-card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+
+        .form-control {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: white;
+            border-radius: 10px;
+            padding: 12px 15px;
+        }
+
+        .form-control::placeholder { color: rgba(255,255,255,0.4); }
+
+        .form-control:focus {
+            background: rgba(255,255,255,0.12);
+            border-color: #e94560;
+            color: white;
+            box-shadow: 0 0 0 3px rgba(233,69,96,0.2);
+        }
+
+        .btn-admin {
+            background: linear-gradient(135deg, #e94560, #c0392b);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            width: 100%;
+            transition: 0.3s;
+        }
+
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(233,69,96,0.4);
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-card">
+    <div class="text-center mb-4">
+        <div style="font-size:50px;">🔐</div>
+        <h4 class="text-white fw-bold mt-2">Admin Login</h4>
+        <p style="color:rgba(255,255,255,0.5); font-size:14px;">RetailHub Admin Panel</p>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+        <div class="mb-3">
+            <input type="text" name="username" class="form-control" placeholder="👤  Username" required>
+        </div>
+        <div class="mb-3">
+            <input type="password" name="password" class="form-control" placeholder="🔒  Password" required>
+        </div>
+        <button class="btn-admin">Login</button>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

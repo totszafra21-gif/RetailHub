@@ -29,7 +29,13 @@
                     </td>
                     <td class="fw-bold">{{ item['name'] }}</td>
                     <td>₱{{ item['price'] }}</td>
-                    <td>{{ item['qty'] }}</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="/cart/decrease/{{ item['id'] }}" class="btn btn-sm btn-outline-secondary">−</a>
+                            <span class="fw-bold">{{ item['qty'] }}</span>
+                            <a href="/cart/increase/{{ item['id'] }}" class="btn btn-sm btn-outline-secondary">+</a>
+                        </div>
+                    </td>
                     <td class="text-danger fw-bold">₱{{ item['price'] * item['qty'] }}</td>
                     <td>
                         <a href="/remove_from_cart/{{ item['id'] }}" class="btn btn-sm btn-danger">Remove</a>
@@ -43,7 +49,7 @@
     <div class="text-end mt-3">
         <h4 class="fw-bold">Total: <span class="text-danger">₱{{ total }}</span></h4>
         <a href="/shop" class="btn btn-outline-dark me-2">Continue Shopping</a>
-        <a href="#" class="btn btn-dark px-4">Checkout</a>
+        <a href="/checkout" class="btn btn-dark px-4">Checkout</a>
     </div>
 
     {% else %}

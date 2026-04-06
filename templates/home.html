@@ -8,7 +8,7 @@
     <div>
         <h1 class="display-4 fw-bold">New Collection</h1>
         <p class="lead">Discover the latest trends in tech & fashion</p>
-        <a href="/shop" class="btn btn-light px-4 py-2 mt-2">Shop Now</a>
+        <a href="{% if user %}/shop{% else %}/login{% endif %}" class="btn btn-light px-4 py-2 mt-2">Shop Now</a>
     </div>
 
 </div>

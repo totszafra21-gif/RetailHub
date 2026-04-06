@@ -48,13 +48,21 @@
         </li>
 
         {% if session.get("user") %}
+        <li class="nav-item">
+            <a class="nav-link" href="/cart">
+                🛒 Cart
+                {% if session.get('cart') %}
+                <span class="badge bg-danger">{{ session['cart'] | length }}</span>
+                {% endif %}
+            </a>
+        </li>
         <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle text-warning" href="#" role="button" data-bs-toggle="dropdown">
                 👤 {{ session["user"] }}
             </a>
             <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item" href="/profile">Profile</a></li>
-                <li><a class="dropdown-item" href="/cart">Cart</a></li>
+                <li><a class="dropdown-item" href="/orders">📦 My Orders</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item text-danger" href="/logout">Logout</a></li>
             </ul>
@@ -74,8 +82,59 @@
 {% block content %}{% endblock %}
 
 <!-- FOOTER -->
-<footer class="bg-dark text-white text-center p-3 mt-5">
-    <p class="mb-0">&copy; 2026 RetailHub. All rights reserved.</p>
+<footer class="bg-dark text-white mt-5 pt-5 pb-3">
+    <div class="container">
+        <div class="row g-4 mb-4">
+
+            <!-- BRAND -->
+            <div class="col-md-4">
+                <h5 class="fw-bold text-warning">🛍️ RetailHub</h5>
+                <p class="text-white-50" style="font-size:14px;">Your one-stop shop for quality laptops, stylish shoes, modern smartphones, premium watches and accessories.</p>
+            </div>
+
+            <!-- QUICK LINKS -->
+            <div class="col-md-2">
+                <h6 class="fw-bold text-white mb-3">Quick Links</h6>
+                <ul class="list-unstyled">
+                    <li><a href="/" class="text-white text-decoration-none">Home</a></li>
+                    <li><a href="/shop" class="text-white text-decoration-none">Shop</a></li>
+                    <li><a href="/contact" class="text-white text-decoration-none">Contact</a></li>
+                    <li><a href="/orders" class="text-white text-decoration-none">My Orders</a></li>
+                </ul>
+            </div>
+
+            <!-- CATEGORIES -->
+            <div class="col-md-3">
+                <h6 class="fw-bold text-white mb-3">Categories</h6>
+                <ul class="list-unstyled">
+                    <li><a href="/shop?category=laptop" class="text-white text-decoration-none">💻 Laptop</a></li>
+                    <li><a href="/shop?category=phone" class="text-white text-decoration-none">📱 Phone</a></li>
+                    <li><a href="/shop?category=shoes" class="text-white text-decoration-none">👟 Shoes</a></li>
+                    <li><a href="/shop?category=watch" class="text-white text-decoration-none">⌚ Watch</a></li>
+                    <li><a href="/shop?category=accessories" class="text-white text-decoration-none">🎧 Accessories</a></li>
+                </ul>
+            </div>
+
+            <!-- CONTACT -->
+            <div class="col-md-3">
+                <h6 class="fw-bold text-white mb-3">Contact Us</h6>
+                <ul class="list-unstyled text-white" style="font-size:14px;">
+                    <li>📧 retailhub@email.com</li>
+                    <li>📞 +63 912 345 6789</li>
+                    <li>📍 Manila, Philippines</li>
+                </ul>
+            </div>
+
+        </div>
+
+        <hr style="border-color:rgba(255,255,255,0.1);">
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <p class="mb-0 text-muted" style="font-size:13px;">&copy; 2026 RetailHub. All rights reserved.</p>
+            <p class="mb-0 text-muted" style="font-size:13px;">Made with ❤️ in the Philippines</p>
+        </div>
+
+    </div>
 </footer>
 
 <!-- Bootstrap JS -->
