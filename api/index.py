@@ -4,17 +4,6 @@ import os
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root)
 
-# Force use installed packages instead of Vercel vendored ones
-for key in list(sys.modules.keys()):
-    if 'flask' in key.lower() or 'werkzeug' in key.lower():
-        del sys.modules[key]
-
-# Remove vendor path and insert site-packages first
-site_packages = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.vercel', 'python', '.venv', 'lib')
-for p in sys.path[:]:
-    if '_vendor' in p:
-        sys.path.remove(p)
-
 from flask import Flask, render_template, request, redirect, session
 from supabase import create_client
 from werkzeug.security import generate_password_hash, check_password_hash
