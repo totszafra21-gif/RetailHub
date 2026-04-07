@@ -1,9 +1,9 @@
-Flask==2.3.3
-Werkzeug==2.3.7
+Flask==3.1.2
+Werkzeug==3.1.5
 supabase==0.7.1
 httpx==0.23.3
 postgrest-py==0.10.6
 gotrue==0.5.4
-itsdangerous==2.1.2
-Jinja2==3.1.2
+itsdangerous==2.2.0
+Jinja2==3.1.6
 click==8.1.7
