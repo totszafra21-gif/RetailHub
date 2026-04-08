@@ -68,8 +68,6 @@ def login():
 
 @app.route("/shop")
 def shop():
-    if "user" not in session:
-        return redirect("/login")
     category = request.args.get("category")
     if category:
         result = supabase.table("products").select("*").eq("category", category).execute()
