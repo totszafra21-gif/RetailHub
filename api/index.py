@@ -5,7 +5,7 @@ root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root)
 
 from flask import Flask, render_template, request, redirect, session
-import httpx
+from supabase import create_client, Client
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__,
@@ -18,47 +18,10 @@ app.secret_key = os.environ.get("SECRET_KEY", "retailhub_secret")
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://xfeehkqvaxdrwvsgoaqv.supabase.co")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmZWVoa3F2YXhkcnd2c2dvYXF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NjE5NTcsImV4cCI6MjA5MTAzNzk1N30.mnsrn9RO5Lg2fanSaae-1FgOz0lN3SCWzkUUSv6zi9A")
 
-HEADERS = {
-    "apikey": SUPABASE_KEY,
-    "Authorization": f"Bearer {SUPABASE_KEY}",
-    "Content-Type": "application/json",
-    "Prefer": "return=representation"
-}
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "admin123"
-
-
-def db_get(table, filters=None, order=None):
-    url = f"{SUPABASE_URL}/rest/v1/{table}?select=*"
-    if filters:
-        for k, v in filters.items():
-            url += f"&{k}=eq.{v}"
-    if order:
-        url += f"&order={order}.desc"
-    r = httpx.get(url, headers=HEADERS)
-    return r.json()
-
-
-def db_insert(table, data):
-    url = f"{SUPABASE_URL}/rest/v1/{table}"
-    r = httpx.post(url, headers=HEADERS, json=data)
-    return r.json()
-
-
-def db_update(table, data, filters):
-    url = f"{SUPABASE_URL}/rest/v1/{table}?"
-    for k, v in filters.items():
-        url += f"{k}=eq.{v}&"
-    r = httpx.patch(url.rstrip("&"), headers=HEADERS, json=data)
-    return r.json()
-
-
-def db_delete(table, filters):
-    url = f"{SUPABASE_URL}/rest/v1/{table}?"
-    for k, v in filters.items():
-        url += f"{k}=eq.{v}&"
-    httpx.delete(url.rstrip("&"), headers=HEADERS)
 
 
 @app.route("/")
@@ -71,14 +34,14 @@ def signup():
     if request.method == "POST":
         password = generate_password_hash(request.form["password"])
         try:
-            db_insert("users", {
+            supabase.table("users").insert({
                 "name": request.form["name"],
                 "username": request.form["username"],
                 "email": request.form["email"],
                 "phone": request.form["phone"],
                 "address": request.form["address"],
                 "password": password
-            })
+            }).execute()
             return redirect("/login")
         except Exception as e:
             return f"Error: {e}"
@@ -95,8 +58,8 @@ def login():
             session["admin"] = True
             return redirect("/admin/dashboard")
 
-        users = db_get("users", {"username": username})
-        if users and check_password_hash(users[0]["password"], password):
+        result = supabase.table("users").select("*").eq("username", username).execute()
+        if result.data and check_password_hash(result.data[0]["password"], password):
             session["user"] = username
             return redirect("/")
         return render_template("login.html", error="Invalid credentials")
@@ -109,10 +72,10 @@ def shop():
         return redirect("/login")
     category = request.args.get("category")
     if category:
-        products = db_get("products", {"category": category})
+        result = supabase.table("products").select("*").eq("category", category).execute()
     else:
-        products = db_get("products")
-    return render_template("shop.html", products=products)
+        result = supabase.table("products").select("*").execute()
+    return render_template("shop.html", products=result.data)
 
 
 @app.route("/contact", methods=["GET", "POST"])
@@ -120,11 +83,11 @@ def contact():
     if "user" not in session:
         return redirect("/login")
     if request.method == "POST":
-        db_insert("contacts", {
+        supabase.table("contacts").insert({
             "name": request.form["name"],
             "email": request.form["email"],
             "message": request.form["message"]
-        })
+        }).execute()
         return redirect("/contact?sent=1")
     return render_template("contact.html", sent=request.args.get("sent"))
 
@@ -141,9 +104,9 @@ def add_to_cart(item_id):
             item["qty"] += 1
             session.modified = True
             return redirect("/shop")
-    products = db_get("products", {"id": item_id})
-    if products:
-        p = products[0]
+    result = supabase.table("products").select("*").eq("id", item_id).execute()
+    if result.data:
+        p = result.data[0]
         cart.append({"id": p["id"], "name": p["name"],
                      "price": float(p["price"]), "image": p["image"], "qty": 1})
         session.modified = True
@@ -198,11 +161,11 @@ def checkout():
         return redirect("/login")
     cart = session.get("cart", [])
     total = sum(i["price"] * i["qty"] for i in cart)
-    users = db_get("users", {"username": session["user"]})
-    user = users[0] if users else {}
+    result = supabase.table("users").select("*").eq("username", session["user"]).execute()
+    user = result.data[0] if result.data else {}
     if request.method == "POST":
         payment = request.form["payment"]
-        order = db_insert("orders", {
+        order = supabase.table("orders").insert({
             "username": session["user"],
             "name": request.form["name"],
             "email": request.form["email"],
@@ -210,15 +173,15 @@ def checkout():
             "address": request.form["address"],
             "payment": payment,
             "total": total
-        })
-        order_id = order[0]["id"]
+        }).execute()
+        order_id = order.data[0]["id"]
         for item in cart:
-            db_insert("order_items", {
+            supabase.table("order_items").insert({
                 "order_id": order_id,
                 "product_name": item["name"],
                 "price": item["price"],
                 "qty": item["qty"]
-            })
+            }).execute()
         ordered_items = cart.copy()
         ordered_total = total
         session["cart"] = []
@@ -232,16 +195,16 @@ def checkout():
 def my_orders():
     if "user" not in session:
         return redirect("/login")
-    orders = db_get("orders", {"username": session["user"]}, order="created_at")
-    return render_template("my_orders.html", orders=orders)
+    orders = supabase.table("orders").select("*").eq("username", session["user"]).order("created_at", desc=True).execute()
+    return render_template("my_orders.html", orders=orders.data)
 
 
 @app.route("/profile")
 def profile():
     if "user" not in session:
         return redirect("/login")
-    users = db_get("users", {"username": session["user"]})
-    user = users[0] if users else {}
+    result = supabase.table("users").select("*").eq("username", session["user"]).execute()
+    user = result.data[0] if result.data else {}
     return render_template("profile.html", user=user)
 
 
@@ -249,12 +212,12 @@ def profile():
 def update_profile():
     if "user" not in session:
         return redirect("/login")
-    db_update("users", {
+    supabase.table("users").update({
         "name": request.form["name"],
         "email": request.form["email"],
         "phone": request.form["phone"],
         "address": request.form["address"]
-    }, {"username": session["user"]})
+    }).eq("username", session["user"]).execute()
     return redirect("/profile")
 
 
@@ -262,7 +225,7 @@ def update_profile():
 def delete_account():
     if "user" not in session:
         return redirect("/login")
-    db_delete("users", {"username": session["user"]})
+    supabase.table("users").delete().eq("username", session["user"]).execute()
     session.clear()
     return redirect("/signup")
 
@@ -271,20 +234,20 @@ def delete_account():
 def admin_dashboard():
     if not session.get("admin"):
         return redirect("/login")
-    orders = db_get("orders", order="created_at")
-    users = db_get("users")
-    products = db_get("products")
-    contacts = db_get("contacts", order="created_at")
-    total_sales = sum(float(o["total"]) for o in orders)
-    return render_template("admin_dashboard.html", orders=orders, users=users,
-                           products=products, contacts=contacts, total_sales=total_sales)
+    orders = supabase.table("orders").select("*").order("created_at", desc=True).execute()
+    users = supabase.table("users").select("*").execute()
+    products = supabase.table("products").select("*").execute()
+    contacts = supabase.table("contacts").select("*").order("created_at", desc=True).execute()
+    total_sales = sum(float(o["total"]) for o in orders.data)
+    return render_template("admin_dashboard.html", orders=orders.data, users=users.data,
+                           products=products.data, contacts=contacts.data, total_sales=total_sales)
 
 
 @app.route("/admin/order/status", methods=["POST"])
 def update_order_status():
     if not session.get("admin"):
         return redirect("/login")
-    db_update("orders", {"status": request.form["status"]}, {"id": request.form["order_id"]})
+    supabase.table("orders").update({"status": request.form["status"]}).eq("id", request.form["order_id"]).execute()
     return redirect("/admin/dashboard")
 
 
