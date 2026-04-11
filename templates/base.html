@@ -29,22 +29,8 @@
             <a class="nav-link" href="/">Home</a>
         </li>
 
-        <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                Categories
-            </a>
-            <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="/shop">All</a></li>
-                <li><a class="dropdown-item" href="/shop?category=laptop">💻 Laptop</a></li>
-                <li><a class="dropdown-item" href="/shop?category=phone">📱 Phone</a></li>
-                <li><a class="dropdown-item" href="/shop?category=shoes">👟 Shoes</a></li>
-                <li><a class="dropdown-item" href="/shop?category=watch">⌚ Watch</a></li>
-                <li><a class="dropdown-item" href="/shop?category=accessories">🎧 Accessories</a></li>
-            </ul>
-        </li>
-
         <li class="nav-item">
-            <a class="nav-link" href="/contact">Contact</a>
+            <a class="nav-link" href="/shop">🛍️ Shop</a>
         </li>
 
         {% if session.get("user") %}
@@ -63,6 +49,7 @@
             <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item" href="/profile">Profile</a></li>
                 <li><a class="dropdown-item" href="/orders">📦 My Orders</a></li>
+                <li><a class="dropdown-item" href="/contact">📬 Contact</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item text-danger" href="/logout">Logout</a></li>
             </ul>

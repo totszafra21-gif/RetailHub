@@ -37,8 +37,8 @@ body {
 
 /* HERO */
 .hero {
-    height: 90vh;
-    background: url("/static/LNsvu.jpg") no-repeat center center/cover;
+    height: 70vh;
+    background: url("/static/LNsvu.jpg") no-repeat center top/cover;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -142,8 +142,8 @@ body {
 
 /* HERO SECTION */
 .hero-section {
-    height: 55vh;
-    background: url("/static/LNsvu.jpg") no-repeat center center/cover;
+    height: 40vh;
+    background: url("/static/LNsvu.jpg") no-repeat center 10%/cover;
     position: relative;
     display: flex;
     align-items: center;

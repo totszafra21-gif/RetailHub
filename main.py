@@ -77,16 +77,11 @@ def login():
 # SHOP
 @app.route("/shop")
 def shop():
-    if "user" not in session:
-        return redirect("/login")
-
     category = request.args.get("category")
-
     if category:
         result = supabase.table("products").select("*").eq("category", category).execute()
     else:
         result = supabase.table("products").select("*").execute()
-
     products = result.data
     return render_template("shop.html", products=products)
 

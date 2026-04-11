@@ -13,41 +13,46 @@
 
 </div>
 
-<!-- PRODUCTS SECTION -->
-<div class="container product-section">
+<!-- CATEGORY SECTION -->
+<section class="categories" style="padding: 30px 60px 10px;">
 
-    <div class="row text-center">
-
-        <div class="col-md-3">
-            <div class="product-card">
-                <img src="{{ url_for('static', filename='images/laptop.jpg') }}">
-                <h5>Laptop</h5>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="product-card">
-                <img src="{{ url_for('static', filename='images/phone.jpg') }}">
-                <h5>Phone</h5>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="product-card">
-                <img src="{{ url_for('static', filename='images/shoes.jpg') }}">
-                <h5>Shoes</h5>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="product-card">
-                <img src="{{ url_for('static', filename='images/watch.jpg') }}">
-                <h5>Watch</h5>
-            </div>
-        </div>
-
+    <a href="/shop?category=laptop" style="text-decoration:none;">
+    <div class="category">
+        <img src="{{ url_for('static', filename='images/laptop.jpg') }}">
+        <div class="category-name">Laptop</div>
     </div>
+    </a>
 
-</div>
+    <a href="/shop?category=phone" style="text-decoration:none;">
+    <div class="category">
+        <img src="{{ url_for('static', filename='images/phone.jpg') }}">
+        <div class="category-name">Cellphone</div>
+    </div>
+    </a>
+
+    <a href="/shop?category=shoes" style="text-decoration:none;">
+    <div class="category">
+        <img src="{{ url_for('static', filename='images/shoes.jpg') }}">
+        <div class="category-name">Shoes</div>
+    </div>
+    </a>
+
+    <a href="/shop?category=watch" style="text-decoration:none;">
+    <div class="category">
+        <img src="{{ url_for('static', filename='images/watch.jpg') }}">
+        <div class="category-name">Watch</div>
+    </div>
+    </a>
+
+    {% if user %}
+    <a href="/shop?category=accessories" style="text-decoration:none;">
+    <div class="category">
+        <img src="{{ url_for('static', filename='images/headset.jpg') }}">
+        <div class="category-name">Accessories</div>
+    </div>
+    </a>
+    {% endif %}
+
+</section>
 
 {% endblock %}
