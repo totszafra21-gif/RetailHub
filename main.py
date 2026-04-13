@@ -196,7 +196,7 @@ def checkout():
     total = sum(i["price"] * i["qty"] for i in cart)
 
     result = supabase.table("users").select("*").eq("username", session["user"]).execute()
-    user = result.data[0] if result.data else {}
+    user = result.data[0] if result.data else {"name": "", "email": "", "phone": "", "address": ""}
 
     if request.method == "POST":
         name = request.form["name"]
@@ -264,6 +264,61 @@ def admin_dashboard():
         contacts=contacts.data,
         total_sales=total_sales
     )
+
+
+# ADMIN ADD PRODUCT
+@app.route("/admin/product/add", methods=["POST"])
+def admin_add_product():
+    if not session.get("admin"):
+        return redirect("/login")
+    supabase.table("products").insert({
+        "name": request.form["name"],
+        "price": request.form["price"],
+        "category": request.form["category"],
+        "image": request.form["image"]
+    }).execute()
+    return redirect("/admin/dashboard#products")
+
+
+# ADMIN EDIT PRODUCT
+@app.route("/admin/product/edit", methods=["POST"])
+def admin_edit_product():
+    if not session.get("admin"):
+        return redirect("/login")
+    supabase.table("products").update({
+        "name": request.form["name"],
+        "price": request.form["price"],
+        "category": request.form["category"],
+        "image": request.form["image"]
+    }).eq("id", request.form["id"]).execute()
+    return redirect("/admin/dashboard#products")
+
+
+# ADMIN DELETE PRODUCT
+@app.route("/admin/product/delete", methods=["POST"])
+def admin_delete_product():
+    if not session.get("admin"):
+        return redirect("/login")
+    supabase.table("products").delete().eq("id", request.form["id"]).execute()
+    return redirect("/admin/dashboard#products")
+
+
+# ADMIN DELETE USER
+@app.route("/admin/user/delete", methods=["POST"])
+def admin_delete_user():
+    if not session.get("admin"):
+        return redirect("/login")
+    supabase.table("users").delete().eq("id", request.form["id"]).execute()
+    return redirect("/admin/dashboard#users")
+
+
+# ADMIN DELETE CONTACT
+@app.route("/admin/contact/delete", methods=["POST"])
+def admin_delete_contact():
+    if not session.get("admin"):
+        return redirect("/login")
+    supabase.table("contacts").delete().eq("id", request.form["id"]).execute()
+    return redirect("/admin/dashboard#contacts")
 
 
 # ADMIN UPDATE ORDER STATUS
