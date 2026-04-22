@@ -4,7 +4,12 @@
 
 <div class="container mt-4">
 
-    <h3 class="fw-bold mb-3">🛍️ Shop</h3>
+    {% if shop_error %}
+    <div class="alert alert-warning border-0 shadow-sm" role="alert">
+        {{ shop_error }}
+    </div>
+    {% endif %}
+
 
     <!-- CATEGORY ICONS -->
     <div class="d-flex gap-3 flex-wrap mb-4">

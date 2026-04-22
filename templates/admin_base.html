@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Panel{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --admin-bg: #f4f7fb;
+            --admin-surface: #ffffff;
+            --admin-sidebar: #172033;
+            --admin-sidebar-muted: rgba(255, 255, 255, 0.72);
+            --admin-accent: #f97316;
+            --admin-accent-dark: #ea580c;
+            --admin-border: #e5e7eb;
+            --admin-text: #111827;
+            --admin-muted: #6b7280;
+        }
+
+        body {
+            background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+            color: var(--admin-text);
+            min-height: 100vh;
+        }
+
+        .admin-sidebar {
+            width: 250px;
+            min-height: 100vh;
+            background: linear-gradient(180deg, #111827 0%, #1f2937 100%);
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 1.5rem 1rem;
+            box-shadow: 18px 0 40px rgba(15, 23, 42, 0.12);
+        }
+
+        .admin-brand {
+            color: #fff;
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            text-decoration: none;
+            display: block;
+        }
+
+        .admin-brand span {
+            color: #fdba74;
+            font-size: 0.8rem;
+            display: block;
+            margin-top: 0.25rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .admin-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--admin-sidebar-muted);
+            text-decoration: none;
+            padding: 0.9rem 1rem;
+            border-radius: 16px;
+            margin-bottom: 0.4rem;
+            transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+        }
+
+        .admin-nav-link:hover,
+        .admin-nav-link.active {
+            background: rgba(255, 255, 255, 0.09);
+            color: #fff;
+            transform: translateX(2px);
+        }
+
+        .admin-nav-link.logout:hover {
+            background: rgba(239, 68, 68, 0.18);
+            color: #fff;
+        }
+
+        .admin-main {
+            margin-left: 250px;
+            padding: 2rem;
+        }
+
+        .admin-page-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.75rem;
+            flex-wrap: wrap;
+        }
+
+        .admin-page-head h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .admin-page-head p {
+            margin: 0.35rem 0 0;
+            color: var(--admin-muted);
+        }
+
+        .admin-card {
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 24px;
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+        }
+
+        .metric-card {
+            padding: 1.35rem;
+            height: 100%;
+        }
+
+        .metric-label {
+            color: var(--admin-muted);
+            font-size: 0.92rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .metric-accent {
+            background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+            border: 1px solid #fed7aa;
+        }
+
+        .table-card {
+            padding: 1.25rem;
+        }
+
+        .table-card h2,
+        .chart-card h2 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .chart-card {
+            padding: 1.25rem;
+            height: 100%;
+        }
+
+        .admin-table thead th {
+            background: #111827;
+            color: #fff;
+            border: 0;
+            font-size: 0.9rem;
+        }
+
+        .admin-table td,
+        .admin-table th {
+            vertical-align: middle;
+        }
+
+        .pill-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.35rem 0.7rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .page-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .admin-btn-primary {
+            background: linear-gradient(135deg, var(--admin-accent), var(--admin-accent-dark));
+            color: #fff;
+            border: 0;
+            border-radius: 999px;
+            padding: 0.8rem 1.15rem;
+            font-weight: 700;
+        }
+
+        .admin-btn-primary:hover {
+            color: #fff;
+        }
+
+        @media (max-width: 991.98px) {
+            .admin-sidebar {
+                position: static;
+                width: 100%;
+                min-height: auto;
+            }
+
+            .admin-main {
+                margin-left: 0;
+                padding: 1.25rem;
+            }
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <aside class="admin-sidebar">
+        <a href="/admin/dashboard" class="admin-brand">
+            RetailHub Admin
+            <span>Control Center</span>
+        </a>
+
+        <nav>
+            <a href="/admin/dashboard" class="admin-nav-link {% if active_page == 'dashboard' %}active{% endif %}">Dashboard</a>
+            <a href="/admin/orders" class="admin-nav-link {% if active_page == 'orders' %}active{% endif %}">Orders</a>
+            <a href="/admin/users" class="admin-nav-link {% if active_page == 'users' %}active{% endif %}">Users</a>
+            <a href="/admin/products" class="admin-nav-link {% if active_page == 'products' %}active{% endif %}">Products</a>
+            <a href="/admin/contacts" class="admin-nav-link {% if active_page == 'contacts' %}active{% endif %}">Contacts</a>
+            <hr style="border-color: rgba(255,255,255,0.08);">
+            <a href="/admin/logout" class="admin-nav-link logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="admin-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

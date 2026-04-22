@@ -1,378 +1,245 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Admin Dashboard</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { background: #f4f4f4; }
-        .sidebar {
-            width: 240px;
-            min-height: 100vh;
-            background: #1a1a2e;
-            position: fixed;
-            top: 0;
-            left: 0;
-            padding: 20px;
-        }
-        .sidebar h4 { color: white; font-weight: bold; margin-bottom: 30px; text-align: center; }
-        .sidebar a {
-            display: block;
-            color: rgba(255,255,255,0.7);
-            text-decoration: none;
-            padding: 10px 15px;
-            border-radius: 10px;
-            margin-bottom: 5px;
-            transition: 0.2s;
-        }
-        .sidebar a:hover { background: rgba(255,255,255,0.1); color: white; }
-        .sidebar a.text-danger:hover { background: rgba(233,69,96,0.2); }
-        .main-content { margin-left: 240px; padding: 30px; }
-        .stat-card { border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-    </style>
-</head>
-<body>
+{% extends "admin_base.html" %}
 
-<!-- SIDEBAR -->
-<div class="sidebar">
-    <h4>🔐 Admin Panel</h4>
-    <a href="#orders">📦 Orders</a>
-    <a href="#users">👥 Users</a>
-    <a href="#products">🛍️ Products</a>
-    <a href="#contacts">📬 Contacts</a>
-    <hr style="border-color:rgba(255,255,255,0.1);">
-    <a href="/admin/logout" class="text-danger">🚪 Logout</a>
-</div>
+{% block title %}Admin Dashboard{% endblock %}
 
-<!-- MAIN CONTENT -->
-<div class="main-content">
+{% block content %}
+<section class="admin-page-head">
+    <div>
+        <h1>Dashboard Overview</h1>
+        <p>Quick visibility into sales, orders, products, and customer activity.</p>
+    </div>
+    <div class="page-actions">
+        <a href="/admin/orders" class="btn admin-btn-primary">Manage Orders</a>
+    </div>
+</section>
 
-    <h3 class="fw-bold mb-4">📊 Dashboard</h3>
-
-    <!-- STATS -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card stat-card p-3 bg-dark text-white">
-                <p class="mb-1 text-muted">Total Sales</p>
-                <h4 class="fw-bold text-danger">₱{{ total_sales }}</h4>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stat-card p-3">
-                <p class="mb-1 text-muted">Orders</p>
-                <h4 class="fw-bold">{{ orders | length }}</h4>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stat-card p-3">
-                <p class="mb-1 text-muted">Users</p>
-                <h4 class="fw-bold">{{ users | length }}</h4>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stat-card p-3">
-                <p class="mb-1 text-muted">Products</p>
-                <h4 class="fw-bold">{{ products | length }}</h4>
-            </div>
+<section class="row g-4 mb-4">
+    <div class="col-md-6 col-xl-3">
+        <div class="admin-card metric-card metric-accent">
+            <p class="metric-label">Total Sales</p>
+            <p class="metric-value">PHP {{ "%.2f"|format(total_sales) }}</p>
         </div>
     </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="admin-card metric-card">
+            <p class="metric-label">Orders</p>
+            <p class="metric-value">{{ orders|length }}</p>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="admin-card metric-card">
+            <p class="metric-label">Users</p>
+            <p class="metric-value">{{ users|length }}</p>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="admin-card metric-card">
+            <p class="metric-label">Products</p>
+            <p class="metric-value">{{ products|length }}</p>
+        </div>
+    </div>
+</section>
 
-    <!-- ORDERS -->
-    <div id="orders" class="card border-0 shadow-sm mb-4" style="border-radius:15px;">
-        <div class="card-body">
-            <h5 class="fw-bold mb-3">📦 Orders</h5>
+<section class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="admin-card chart-card">
+            <h2>Sales Trend</h2>
+            <canvas id="salesChart" height="120"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="admin-card chart-card">
+            <h2>Order Status</h2>
+            <canvas id="statusChart" height="120"></canvas>
+        </div>
+    </div>
+</section>
+
+<section class="row g-4 mb-4">
+    <div class="col-lg-5">
+        <div class="admin-card chart-card">
+            <h2>Products by Category</h2>
+            <canvas id="categoryChart" height="120"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="admin-card table-card">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <h2 class="mb-0">Recent Orders</h2>
+                <a href="/admin/orders" class="btn btn-sm btn-outline-dark">View All</a>
+            </div>
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-dark">
+                <table class="table admin-table table-hover">
+                    <thead>
                         <tr>
                             <th>#</th>
                             <th>Customer</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Address</th>
-                            <th>Payment</th>
                             <th>Total</th>
                             <th>Status</th>
                             <th>Date</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for order in orders %}
+                        {% for order in recent_orders %}
                         <tr>
-                            <td>{{ order['id'] }}</td>
-                            <td class="fw-bold">{{ order['name'] }}</td>
-                            <td>{{ order['email'] }}</td>
-                            <td>{{ order['phone'] }}</td>
-                            <td>{{ order['address'] }}</td>
-                            <td>
-                                {% if order['payment'] == 'cod' %}
-                                <span class="badge bg-secondary">💵 COD</span>
-                                {% else %}
-                                <span class="badge bg-primary">📱 GCash</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-danger fw-bold">₱{{ order['total'] }}</td>
-                            <td>
-                                {% if order['status'] == 'Pending' %}
-                                <span class="badge bg-warning text-dark">⏳ Pending</span>
-                                {% elif order['status'] == 'Delivered' %}
-                                <span class="badge bg-info">🚚 Delivered</span>
-                                {% elif order['status'] == 'Completed' %}
-                                <span class="badge bg-success">✅ Completed</span>
-                                {% elif order['status'] == 'Cancelled' %}
-                                <span class="badge bg-danger">❌ Cancelled</span>
-                                {% endif %}
-                                <form method="POST" action="/admin/order/status" class="mt-1">
-                                    <input type="hidden" name="order_id" value="{{ order['id'] }}">
-                                    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
-                                        <option value="Pending" {% if order['status'] == 'Pending' %}selected{% endif %}>⏳ Pending</option>
-                                        <option value="Delivered" {% if order['status'] == 'Delivered' %}selected{% endif %}>🚚 Delivered</option>
-                                        <option value="Completed" {% if order['status'] == 'Completed' %}selected{% endif %}>✅ Completed</option>
-                                        <option value="Cancelled" {% if order['status'] == 'Cancelled' %}selected{% endif %}>❌ Cancelled</option>
-                                    </select>
-                                </form>
-                            </td>
-                            <td class="text-muted">{{ order['created_at'][:10] }}</td>
+                            <td>{{ order["id"] }}</td>
+                            <td>{{ order["name"] }}</td>
+                            <td>PHP {{ order["total"] }}</td>
+                            <td>{{ order["status"] or "Pending" }}</td>
+                            <td>{{ order["created_at"][:10] if order["created_at"] else "N/A" }}</td>
                         </tr>
                         {% else %}
-                        <tr><td colspan="9" class="text-center text-muted">No orders yet</td></tr>
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">No orders yet.</td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
+</section>
 
-    <!-- USERS -->
-    <div id="users" class="card border-0 shadow-sm mb-4" style="border-radius:15px;">
-        <div class="card-body">
-            <h5 class="fw-bold mb-3">👥 Users</h5>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>#</th>
-                            <th>Name</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Address</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user in users %}
-                        <tr>
-                            <td>{{ user['id'] }}</td>
-                            <td class="fw-bold">{{ user['name'] }}</td>
-                            <td>@{{ user['username'] }}</td>
-                            <td>{{ user['email'] }}</td>
-                            <td>{{ user['phone'] or 'N/A' }}</td>
-                            <td>{{ user['address'] or 'N/A' }}</td>
-                            <td>
-                                <form method="POST" action="/admin/user/delete" onsubmit="return confirm('Delete this user?')">
-                                    <input type="hidden" name="id" value="{{ user['id'] }}">
-                                    <button class="btn btn-sm btn-danger">🗑️</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr><td colspan="7" class="text-center text-muted">No users yet</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- PRODUCTS -->
-    <div id="products" class="card border-0 shadow-sm mb-4" style="border-radius:15px;">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="fw-bold mb-0">🛍️ Products</h5>
-                <button class="btn btn-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addProductModal">+ Add Product</button>
+<section class="row g-4">
+    <div class="col-lg-6">
+        <div class="admin-card table-card">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <h2 class="mb-0">Latest Contacts</h2>
+                <a href="/admin/contacts" class="btn btn-sm btn-outline-dark">Open Contacts</a>
             </div>
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-dark">
+                <table class="table admin-table table-hover">
+                    <thead>
                         <tr>
-                            <th>#</th>
-                            <th>Image</th>
-                            <th>Name</th>
-                            <th>Category</th>
-                            <th>Price</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for product in products %}
-                        <tr>
-                            <td>{{ product['id'] }}</td>
-                            <td>
-                                <img src="/static/{{ product['image'] }}"
-                                     style="width:50px; height:50px; object-fit:cover; border-radius:8px;">
-                            </td>
-                            <td class="fw-bold">{{ product['name'] }}</td>
-                            <td><span class="badge bg-dark">{{ product['category'] }}</span></td>
-                            <td class="text-danger fw-bold">₱{{ product['price'] }}</td>
-                            <td class="d-flex gap-1">
-                                <button class="btn btn-sm btn-warning"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#editProductModal"
-                                    onclick="fillEdit('{{ product['id'] }}','{{ product['name'] }}','{{ product['price'] }}','{{ product['category'] }}','{{ product['image'] }}')">
-                                    ✏️
-                                </button>
-                                <form method="POST" action="/admin/product/delete" onsubmit="return confirm('Delete this product?')">
-                                    <input type="hidden" name="id" value="{{ product['id'] }}">
-                                    <button class="btn btn-sm btn-danger">🗑️</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr><td colspan="6" class="text-center text-muted">No products yet</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- CONTACTS -->
-    <div id="contacts" class="card border-0 shadow-sm mb-4" style="border-radius:15px;">
-        <div class="card-body">
-            <h5 class="fw-bold mb-3">📬 Contact Messages</h5>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>#</th>
                             <th>Name</th>
                             <th>Email</th>
-                            <th>Message</th>
                             <th>Date</th>
-                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for contact in contacts %}
+                        {% for contact in recent_contacts %}
                         <tr>
-                            <td>{{ contact['id'] }}</td>
-                            <td class="fw-bold">{{ contact['name'] }}</td>
-                            <td>{{ contact['email'] }}</td>
-                            <td>{{ contact['message'] }}</td>
-                            <td class="text-muted">{{ contact['created_at'][:10] }}</td>
-                            <td>
-                                <form method="POST" action="/admin/contact/delete" onsubmit="return confirm('Delete this message?')">
-                                    <input type="hidden" name="id" value="{{ contact['id'] }}">
-                                    <button class="btn btn-sm btn-danger">🗑️</button>
-                                </form>
-                            </td>
+                            <td>{{ contact["name"] }}</td>
+                            <td>{{ contact["email"] }}</td>
+                            <td>{{ contact["created_at"][:10] if contact["created_at"] else "N/A" }}</td>
                         </tr>
                         {% else %}
-                        <tr><td colspan="6" class="text-center text-muted">No messages yet</td></tr>
+                        <tr>
+                            <td colspan="3" class="text-center text-muted">No messages yet.</td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
-
-</div>
-
-<!-- ADD PRODUCT MODAL -->
-<div class="modal fade" id="addProductModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold">➕ Add Product</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="col-lg-6">
+        <div class="admin-card table-card">
+            <h2>Shortcuts</h2>
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <a href="/admin/users" class="text-decoration-none">
+                        <div class="admin-card metric-card h-100">
+                            <p class="metric-label">Customer Accounts</p>
+                            <p class="metric-value">{{ users|length }}</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-sm-6">
+                    <a href="/admin/products" class="text-decoration-none">
+                        <div class="admin-card metric-card h-100">
+                            <p class="metric-label">Inventory Items</p>
+                            <p class="metric-value">{{ products|length }}</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-sm-6">
+                    <a href="/admin/orders" class="text-decoration-none">
+                        <div class="admin-card metric-card h-100">
+                            <p class="metric-label">Order Queue</p>
+                            <p class="metric-value">{{ orders|length }}</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-sm-6">
+                    <a href="/admin/contacts" class="text-decoration-none">
+                        <div class="admin-card metric-card h-100">
+                            <p class="metric-label">Contact Messages</p>
+                            <p class="metric-value">{{ contacts|length }}</p>
+                        </div>
+                    </a>
+                </div>
             </div>
-            <form method="POST" action="/admin/product/add">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Name</label>
-                        <input type="text" name="name" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Price</label>
-                        <input type="number" name="price" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Category</label>
-                        <select name="category" class="form-select" required>
-                            <option value="laptop">💻 Laptop</option>
-                            <option value="phone">📱 Phone</option>
-                            <option value="shoes">👟 Shoes</option>
-                            <option value="watch">⌚ Watch</option>
-                            <option value="accessories">🎧 Accessories</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Image path (e.g. images/laptop.jpg)</label>
-                        <input type="text" name="image" class="form-control" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-dark">Add Product</button>
-                </div>
-            </form>
         </div>
     </div>
-</div>
+</section>
+{% endblock %}
 
-<!-- EDIT PRODUCT MODAL -->
-<div class="modal fade" id="editProductModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold">✏️ Edit Product</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="POST" action="/admin/product/edit">
-                <div class="modal-body">
-                    <input type="hidden" name="id" id="editId">
-                    <div class="mb-3">
-                        <label class="form-label">Name</label>
-                        <input type="text" name="name" id="editName" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Price</label>
-                        <input type="number" name="price" id="editPrice" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Category</label>
-                        <select name="category" id="editCategory" class="form-select" required>
-                            <option value="laptop">💻 Laptop</option>
-                            <option value="phone">📱 Phone</option>
-                            <option value="shoes">👟 Shoes</option>
-                            <option value="watch">⌚ Watch</option>
-                            <option value="accessories">🎧 Accessories</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Image path</label>
-                        <input type="text" name="image" id="editImage" class="form-control" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-dark">Save Changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    function fillEdit(id, name, price, category, image) {
-        document.getElementById('editId').value = id;
-        document.getElementById('editName').value = name;
-        document.getElementById('editPrice').value = price;
-        document.getElementById('editCategory').value = category;
-        document.getElementById('editImage').value = image;
-    }
+    const salesLabels = {{ sales_labels|tojson }};
+    const salesValues = {{ sales_values|tojson }};
+    const statusLabels = {{ order_status_labels|tojson }};
+    const statusValues = {{ order_status_values|tojson }};
+    const categoryLabels = {{ category_labels|tojson }};
+    const categoryValues = {{ category_values|tojson }};
+
+    new Chart(document.getElementById("salesChart"), {
+        type: "bar",
+        data: {
+            labels: salesLabels,
+            datasets: [{
+                label: "Sales",
+                data: salesValues,
+                borderRadius: 12,
+                backgroundColor: "#f97316"
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+
+    new Chart(document.getElementById("statusChart"), {
+        type: "doughnut",
+        data: {
+            labels: statusLabels,
+            datasets: [{
+                data: statusValues,
+                backgroundColor: ["#f59e0b", "#3b82f6", "#22c55e", "#ef4444"]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: "bottom"
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById("categoryChart"), {
+        type: "pie",
+        data: {
+            labels: categoryLabels,
+            datasets: [{
+                data: categoryValues,
+                backgroundColor: ["#f97316", "#8b5cf6", "#06b6d4", "#22c55e", "#ef4444", "#f59e0b"]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: "bottom"
+                }
+            }
+        }
+    });
 </script>
-</body>
-</html>
+{% endblock %}

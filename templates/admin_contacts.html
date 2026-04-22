@@ -1,0 +1,50 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Admin Contacts{% endblock %}
+
+{% block content %}
+<section class="admin-page-head">
+    <div>
+        <h1>Contacts</h1>
+        <p>Read customer messages and keep the inbox tidy.</p>
+    </div>
+</section>
+
+<section class="admin-card table-card">
+    <div class="table-responsive">
+        <table class="table admin-table table-hover">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Message</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contact in contacts %}
+                <tr>
+                    <td>{{ contact["id"] }}</td>
+                    <td class="fw-bold">{{ contact["name"] }}</td>
+                    <td>{{ contact["email"] }}</td>
+                    <td>{{ contact["message"] }}</td>
+                    <td>{{ contact["created_at"][:10] if contact["created_at"] else "N/A" }}</td>
+                    <td>
+                        <form method="POST" action="/admin/contact/delete" onsubmit="return confirm('Delete this message?')">
+                            <input type="hidden" name="id" value="{{ contact['id'] }}">
+                            <button class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted">No messages yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

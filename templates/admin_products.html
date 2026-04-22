@@ -1,0 +1,156 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Admin Products{% endblock %}
+
+{% block content %}
+<section class="admin-page-head">
+    <div>
+        <h1>Products</h1>
+        <p>Maintain your catalog, pricing, and category assignments.</p>
+    </div>
+    <div class="page-actions">
+        <button class="btn admin-btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">Add Product</button>
+    </div>
+</section>
+
+<section class="admin-card table-card">
+    <div class="table-responsive">
+        <table class="table admin-table table-hover">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td>{{ product["id"] }}</td>
+                    <td>
+                        <img src="/static/{{ product['image'] }}" alt="{{ product['name'] }}" style="width:56px; height:56px; object-fit:cover; border-radius:12px;">
+                    </td>
+                    <td class="fw-bold">{{ product["name"] }}</td>
+                    <td>{{ product["category"] }}</td>
+                    <td>PHP {{ product["price"] }}</td>
+                    <td class="d-flex gap-2">
+                        <button class="btn btn-sm btn-warning"
+                            data-bs-toggle="modal"
+                            data-bs-target="#editProductModal"
+                            onclick="fillEdit('{{ product['id'] }}','{{ product['name'] }}','{{ product['price'] }}','{{ product['category'] }}','{{ product['image'] }}')">
+                            Edit
+                        </button>
+                        <form method="POST" action="/admin/product/delete" onsubmit="return confirm('Delete this product?')">
+                            <input type="hidden" name="id" value="{{ product['id'] }}">
+                            <button class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted">No products yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<div class="modal fade" id="addProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Add Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="/admin/product/add">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Price</label>
+                        <input type="number" name="price" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <select name="category" class="form-select" required>
+                            <option value="laptop">Laptop</option>
+                            <option value="phone">Phone</option>
+                            <option value="shoes">Shoes</option>
+                            <option value="watch">Watch</option>
+                            <option value="accessories">Accessories</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Image path</label>
+                        <input type="text" name="image" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn admin-btn-primary">Add Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Edit Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="/admin/product/edit">
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="editId">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" name="name" id="editName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Price</label>
+                        <input type="number" name="price" id="editPrice" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <select name="category" id="editCategory" class="form-select" required>
+                            <option value="laptop">Laptop</option>
+                            <option value="phone">Phone</option>
+                            <option value="shoes">Shoes</option>
+                            <option value="watch">Watch</option>
+                            <option value="accessories">Accessories</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Image path</label>
+                        <input type="text" name="image" id="editImage" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn admin-btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function fillEdit(id, name, price, category, image) {
+        document.getElementById("editId").value = id;
+        document.getElementById("editName").value = name;
+        document.getElementById("editPrice").value = price;
+        document.getElementById("editCategory").value = category;
+        document.getElementById("editImage").value = image;
+    }
+</script>
+{% endblock %}

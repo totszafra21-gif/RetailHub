@@ -10,15 +10,124 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+FALLBACK_PRODUCTS = [
+    {"id": 1, "name": "Gaming Laptop", "price": 32999, "category": "laptop", "image": "images/laptop.jpg"},
+    {"id": 2, "name": "Smartphone", "price": 9999, "category": "phone", "image": "images/phone.jpg"},
+    {"id": 3, "name": "Running Shoes", "price": 2499, "category": "shoes", "image": "images/shoes.jpg"},
+    {"id": 4, "name": "Classic Watch", "price": 4999, "category": "watch", "image": "images/watch.jpg"},
+    {"id": 5, "name": "Wireless Headset", "price": 799, "category": "accessories", "image": "images/headset.jpg"},
+]
+
+
+def get_products_data(category=None):
+    try:
+        query = supabase.table("products").select("*")
+        if category:
+            query = query.eq("category", category)
+        result = query.execute()
+        return result.data, None
+    except Exception:
+        products = FALLBACK_PRODUCTS
+        if category:
+            products = [p for p in products if p["category"].lower() == category.lower()]
+        return products, "Live product data is temporarily unavailable. Showing offline items instead."
+
+
+def get_product_data(item_id):
+    try:
+        result = supabase.table("products").select("*").eq("id", item_id).execute()
+        if result.data:
+            return result.data[0]
+    except Exception:
+        pass
+
+    for product in FALLBACK_PRODUCTS:
+        if product["id"] == item_id:
+            return product
+    return None
+
 
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "admin123"
+
+
+def require_admin():
+    if not session.get("admin"):
+        return redirect("/admin")
+    return None
+
+
+def get_admin_overview_data():
+    orders = supabase.table("orders").select("*").order("created_at", desc=True).execute().data
+    users = supabase.table("users").select("*").execute().data
+    products = supabase.table("products").select("*").execute().data
+    contacts = supabase.table("contacts").select("*").order("created_at", desc=True).execute().data
+
+    total_sales = sum(float(order.get("total", 0) or 0) for order in orders)
+
+    order_status_counts = {
+        "Pending": 0,
+        "Delivered": 0,
+        "Completed": 0,
+        "Cancelled": 0
+    }
+    for order in orders:
+        status = order.get("status") or "Pending"
+        order_status_counts[status] = order_status_counts.get(status, 0) + 1
+
+    product_category_counts = {}
+    for product in products:
+        category = (product.get("category") or "Uncategorized").title()
+        product_category_counts[category] = product_category_counts.get(category, 0) + 1
+
+    sales_by_day = {}
+    for order in orders:
+        created_at = order.get("created_at") or ""
+        day = created_at[:10] if created_at else "Unknown"
+        sales_by_day[day] = sales_by_day.get(day, 0) + float(order.get("total", 0) or 0)
+
+    sales_labels = list(reversed(list(sales_by_day.keys())[:7]))
+    sales_values = [sales_by_day[label] for label in sales_labels]
+
+    return {
+        "orders": orders,
+        "users": users,
+        "products": products,
+        "contacts": contacts,
+        "total_sales": total_sales,
+        "recent_orders": orders[:5],
+        "recent_contacts": contacts[:5],
+        "order_status_labels": list(order_status_counts.keys()),
+        "order_status_values": list(order_status_counts.values()),
+        "category_labels": list(product_category_counts.keys()),
+        "category_values": list(product_category_counts.values()),
+        "sales_labels": sales_labels,
+        "sales_values": sales_values
+    }
 
 
 # HOME
 @app.route("/")
 def home():
     return render_template("home.html", user=session.get("user"))
+
+
+@app.route("/admin", methods=["GET", "POST"])
+def admin_login():
+    if session.get("admin"):
+        return redirect("/admin/dashboard")
+
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            session["admin"] = True
+            return redirect("/admin/dashboard")
+
+        return render_template("admin_login.html", error="Invalid admin credentials")
+
+    return render_template("admin_login.html", error=None)
 
 
 # SIGN UP
@@ -78,12 +187,8 @@ def login():
 @app.route("/shop")
 def shop():
     category = request.args.get("category")
-    if category:
-        result = supabase.table("products").select("*").eq("category", category).execute()
-    else:
-        result = supabase.table("products").select("*").execute()
-    products = result.data
-    return render_template("shop.html", products=products)
+    products, shop_error = get_products_data(category)
+    return render_template("shop.html", products=products, shop_error=shop_error)
 
 
 # CONTACT
@@ -124,10 +229,9 @@ def add_to_cart(item_id):
             session.modified = True
             return redirect("/shop")
 
-    result = supabase.table("products").select("*").eq("id", item_id).execute()
+    product = get_product_data(item_id)
 
-    if result.data:
-        product = result.data[0]
+    if product:
         cart.append({
             "id": product["id"],
             "name": product["name"],
@@ -247,91 +351,120 @@ def my_orders():
 # ADMIN DASHBOARD
 @app.route("/admin/dashboard")
 def admin_dashboard():
-    if not session.get("admin"):
-        return redirect("/admin")
+    guard = require_admin()
+    if guard:
+        return guard
+
+    data = get_admin_overview_data()
+    return render_template("admin_dashboard.html", active_page="dashboard", **data)
+
+
+@app.route("/admin/orders")
+def admin_orders():
+    guard = require_admin()
+    if guard:
+        return guard
 
     orders = supabase.table("orders").select("*").order("created_at", desc=True).execute()
+    return render_template("admin_orders.html", orders=orders.data, active_page="orders")
+
+
+@app.route("/admin/users")
+def admin_users():
+    guard = require_admin()
+    if guard:
+        return guard
+
     users = supabase.table("users").select("*").execute()
+    return render_template("admin_users.html", users=users.data, active_page="users")
+
+
+@app.route("/admin/products")
+def admin_products():
+    guard = require_admin()
+    if guard:
+        return guard
+
     products = supabase.table("products").select("*").execute()
+    return render_template("admin_products.html", products=products.data, active_page="products")
+
+
+@app.route("/admin/contacts")
+def admin_contacts():
+    guard = require_admin()
+    if guard:
+        return guard
+
     contacts = supabase.table("contacts").select("*").order("created_at", desc=True).execute()
-
-    total_sales = sum(o["total"] for o in orders.data)
-
-    return render_template("admin_dashboard.html",
-        orders=orders.data,
-        users=users.data,
-        products=products.data,
-        contacts=contacts.data,
-        total_sales=total_sales
-    )
+    return render_template("admin_contacts.html", contacts=contacts.data, active_page="contacts")
 
 
 # ADMIN ADD PRODUCT
 @app.route("/admin/product/add", methods=["POST"])
 def admin_add_product():
     if not session.get("admin"):
-        return redirect("/login")
+        return redirect("/admin")
     supabase.table("products").insert({
         "name": request.form["name"],
         "price": request.form["price"],
         "category": request.form["category"],
         "image": request.form["image"]
     }).execute()
-    return redirect("/admin/dashboard#products")
+    return redirect("/admin/products")
 
 
 # ADMIN EDIT PRODUCT
 @app.route("/admin/product/edit", methods=["POST"])
 def admin_edit_product():
     if not session.get("admin"):
-        return redirect("/login")
+        return redirect("/admin")
     supabase.table("products").update({
         "name": request.form["name"],
         "price": request.form["price"],
         "category": request.form["category"],
         "image": request.form["image"]
     }).eq("id", request.form["id"]).execute()
-    return redirect("/admin/dashboard#products")
+    return redirect("/admin/products")
 
 
 # ADMIN DELETE PRODUCT
 @app.route("/admin/product/delete", methods=["POST"])
 def admin_delete_product():
     if not session.get("admin"):
-        return redirect("/login")
+        return redirect("/admin")
     supabase.table("products").delete().eq("id", request.form["id"]).execute()
-    return redirect("/admin/dashboard#products")
+    return redirect("/admin/products")
 
 
 # ADMIN DELETE USER
 @app.route("/admin/user/delete", methods=["POST"])
 def admin_delete_user():
     if not session.get("admin"):
-        return redirect("/login")
+        return redirect("/admin")
     supabase.table("users").delete().eq("id", request.form["id"]).execute()
-    return redirect("/admin/dashboard#users")
+    return redirect("/admin/users")
 
 
 # ADMIN DELETE CONTACT
 @app.route("/admin/contact/delete", methods=["POST"])
 def admin_delete_contact():
     if not session.get("admin"):
-        return redirect("/login")
+        return redirect("/admin")
     supabase.table("contacts").delete().eq("id", request.form["id"]).execute()
-    return redirect("/admin/dashboard#contacts")
+    return redirect("/admin/contacts")
 
 
 # ADMIN UPDATE ORDER STATUS
 @app.route("/admin/order/status", methods=["POST"])
 def update_order_status():
     if not session.get("admin"):
-        return redirect("/login")
+        return redirect("/admin")
 
     order_id = request.form["order_id"]
     status = request.form["status"]
 
     supabase.table("orders").update({"status": status}).eq("id", order_id).execute()
-    return redirect("/admin/dashboard")
+    return redirect("/admin/orders")
 
 
 # ADMIN LOGOUT

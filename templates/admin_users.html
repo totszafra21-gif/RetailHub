@@ -1,0 +1,52 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Admin Users{% endblock %}
+
+{% block content %}
+<section class="admin-page-head">
+    <div>
+        <h1>Users</h1>
+        <p>Manage customer accounts and remove unwanted entries.</p>
+    </div>
+</section>
+
+<section class="admin-card table-card">
+    <div class="table-responsive">
+        <table class="table admin-table table-hover">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user["id"] }}</td>
+                    <td class="fw-bold">{{ user["name"] }}</td>
+                    <td>@{{ user["username"] }}</td>
+                    <td>{{ user["email"] }}</td>
+                    <td>{{ user["phone"] or "N/A" }}</td>
+                    <td>{{ user["address"] or "N/A" }}</td>
+                    <td>
+                        <form method="POST" action="/admin/user/delete" onsubmit="return confirm('Delete this user?')">
+                            <input type="hidden" name="id" value="{{ user['id'] }}">
+                            <button class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted">No users yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

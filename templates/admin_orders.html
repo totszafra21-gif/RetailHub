@@ -1,0 +1,61 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Admin Orders{% endblock %}
+
+{% block content %}
+<section class="admin-page-head">
+    <div>
+        <h1>Orders</h1>
+        <p>Review customer purchases and update delivery progress.</p>
+    </div>
+</section>
+
+<section class="admin-card table-card">
+    <div class="table-responsive">
+        <table class="table admin-table table-hover">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Customer</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    <th>Payment</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>{{ order["id"] }}</td>
+                    <td class="fw-bold">{{ order["name"] }}</td>
+                    <td>{{ order["email"] }}</td>
+                    <td>{{ order["phone"] }}</td>
+                    <td>{{ order["address"] }}</td>
+                    <td>{{ "COD" if order["payment"] == "cod" else "GCash" }}</td>
+                    <td>PHP {{ order["total"] }}</td>
+                    <td style="min-width: 180px;">
+                        <form method="POST" action="/admin/order/status">
+                            <input type="hidden" name="order_id" value="{{ order['id'] }}">
+                            <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="Pending" {% if order["status"] == "Pending" %}selected{% endif %}>Pending</option>
+                                <option value="Delivered" {% if order["status"] == "Delivered" %}selected{% endif %}>Delivered</option>
+                                <option value="Completed" {% if order["status"] == "Completed" %}selected{% endif %}>Completed</option>
+                                <option value="Cancelled" {% if order["status"] == "Cancelled" %}selected{% endif %}>Cancelled</option>
+                            </select>
+                        </form>
+                    </td>
+                    <td>{{ order["created_at"][:10] if order["created_at"] else "N/A" }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="text-center text-muted">No orders yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
