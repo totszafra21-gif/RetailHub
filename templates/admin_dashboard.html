@@ -13,6 +13,12 @@
     </div>
 </section>
 
+{% if admin_warnings %}
+<section class="alert alert-warning border-0 shadow-sm mb-4" role="alert">
+    Some admin data could not be loaded right now: {{ admin_warnings|join(" ") }}
+</section>
+{% endif %}
+
 <section class="row g-4 mb-4">
     <div class="col-md-6 col-xl-3">
         <div class="admin-card metric-card metric-accent">

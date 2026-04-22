@@ -57,11 +57,22 @@ def require_admin():
     return None
 
 
+def fetch_table_rows(table_name, order_by=None, desc=False):
+    try:
+        query = supabase.table(table_name).select("*")
+        if order_by:
+            query = query.order(order_by, desc=desc)
+        result = query.execute()
+        return result.data or [], None
+    except Exception:
+        return [], f"{table_name.title()} data is temporarily unavailable."
+
+
 def get_admin_overview_data():
-    orders = supabase.table("orders").select("*").order("created_at", desc=True).execute().data
-    users = supabase.table("users").select("*").execute().data
-    products = supabase.table("products").select("*").execute().data
-    contacts = supabase.table("contacts").select("*").order("created_at", desc=True).execute().data
+    orders, orders_error = fetch_table_rows("orders", order_by="created_at", desc=True)
+    users, users_error = fetch_table_rows("users")
+    products, products_error = fetch_table_rows("products")
+    contacts, contacts_error = fetch_table_rows("contacts", order_by="created_at", desc=True)
 
     total_sales = sum(float(order.get("total", 0) or 0) for order in orders)
 
@@ -88,6 +99,10 @@ def get_admin_overview_data():
 
     sales_labels = list(reversed(list(sales_by_day.keys())[:7]))
     sales_values = [sales_by_day[label] for label in sales_labels]
+    admin_warnings = [
+        error for error in [orders_error, users_error, products_error, contacts_error]
+        if error
+    ]
 
     return {
         "orders": orders,
@@ -102,7 +117,8 @@ def get_admin_overview_data():
         "category_labels": list(product_category_counts.keys()),
         "category_values": list(product_category_counts.values()),
         "sales_labels": sales_labels,
-        "sales_values": sales_values
+        "sales_values": sales_values,
+        "admin_warnings": admin_warnings
     }
 
 
