@@ -21,7 +21,12 @@
     }
 
     .retail-hero-card {
-        padding: 2.5rem 0;
+        padding: 2rem;
+        background: rgba(255, 252, 247, 0.92);
+        border: 1px solid rgba(251, 146, 60, 0.18);
+        border-radius: 34px;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+        backdrop-filter: blur(10px);
     }
 
     .eyebrow {
@@ -136,18 +141,14 @@
     .hero-slider {
         position: relative;
         width: min(100%, 420px);
-        background: linear-gradient(180deg, #ffffff 0%, #fff7ed 100%);
-        border-radius: 30px;
-        padding: 1.75rem;
-        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
-        overflow: hidden;
+        padding: 0;
     }
 
     .hero-slider::before {
         content: "";
         position: absolute;
         inset: 0;
-        background: linear-gradient(160deg, rgba(251, 146, 60, 0.12), transparent 45%);
+        background: none;
         pointer-events: none;
     }
 
@@ -183,6 +184,7 @@
         overflow: hidden;
         background: #fff;
         padding: 0.75rem;
+        box-shadow: 0 18px 35px rgba(15, 23, 42, 0.1);
     }
 
     .slide-image-frame img {
@@ -232,7 +234,7 @@
     .slider-dots {
         display: flex;
         gap: 0.45rem;
-        justify-content: center;
+        justify-content: flex-start;
         margin-top: 1rem;
     }
 
@@ -409,8 +411,8 @@
         }
 
         .retail-hero-card {
-            padding: 1.5rem 0;
-            border-radius: 0;
+            padding: 1.25rem;
+            border-radius: 26px;
         }
 
         .retail-hero {
