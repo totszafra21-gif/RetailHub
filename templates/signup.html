@@ -117,13 +117,21 @@
         <div class="signup-title">Create Account</div>
         <div class="signup-subtitle">Join RetailHub today</div>
 
+        {% if error %}
+        <div class="alert alert-danger py-2" role="alert">{{ error }}</div>
+        {% endif %}
+
+        {% if success_message %}
+        <div class="alert alert-success py-2" role="alert">{{ success_message }}</div>
+        {% endif %}
+
         <form method="POST">
 
-            <input type="text" name="name" class="form-control" placeholder="👤  Full Name" required>
-            <input type="text" name="username" class="form-control" placeholder="🧑  Username" required>
-            <input type="email" name="email" class="form-control" placeholder="📧  Email" required>
-            <input type="text" name="phone" class="form-control" placeholder="📞  Phone Number">
-            <input type="text" name="address" class="form-control" placeholder="📍  Address">
+            <input type="text" name="name" class="form-control" placeholder="👤  Full Name" maxlength="120" required>
+            <input type="text" name="username" class="form-control" placeholder="🧑  Username" maxlength="50" autocapitalize="off" spellcheck="false" required>
+            <input type="email" name="email" class="form-control" placeholder="📧  Email" maxlength="254" autocomplete="email" autocapitalize="off" spellcheck="false" required>
+            <input type="text" name="phone" class="form-control" placeholder="📞  Phone Number" maxlength="30" autocomplete="tel">
+            <input type="text" name="address" class="form-control" placeholder="📍  Address" maxlength="255" autocomplete="street-address">
             <input type="password" name="password" class="form-control" placeholder="🔒  Password" required>
 
             <button class="btn-signup">Sign Up</button>

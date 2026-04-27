@@ -116,16 +116,20 @@
 
         <form method="POST">
 
+            {% if notice %}
+            <div class="alert alert-success">{{ notice }}</div>
+            {% endif %}
+
             {% if error %}
             <div class="alert alert-danger">{{ error }}</div>
             {% endif %}
 
             <div class="mb-3">
-                <input type="text" name="username" class="form-control" placeholder="👤  Username" required>
+                <input type="text" name="username" class="form-control" placeholder="Email or username" autocomplete="username" required>
             </div>
 
             <div class="mb-3">
-                <input type="password" name="password" class="form-control" placeholder="🔒  Password" required>
+                <input type="password" name="password" class="form-control" placeholder="Password" autocomplete="current-password" required>
             </div>
 
             <button class="btn-login mt-2">Login</button>

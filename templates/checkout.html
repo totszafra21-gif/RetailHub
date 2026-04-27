@@ -64,6 +64,10 @@
 
     <h3 class="fw-bold mb-4">🧾 Checkout</h3>
 
+    {% if error %}
+    <div class="alert alert-danger" role="alert">{{ error }}</div>
+    {% endif %}
+
     <div class="row g-4">
 
         <!-- SHIPPING FORM -->
@@ -75,22 +79,22 @@
 
                     <div class="mb-3">
                         <label class="form-label text-muted">Full Name</label>
-                        <input type="text" name="name" class="form-control" value="{{ user['name'] }}" required>
+                        <input type="text" name="name" class="form-control" value="{{ user['name'] }}" maxlength="120" required>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label text-muted">Email</label>
-                        <input type="email" name="email" class="form-control" value="{{ user['email'] }}" required>
+                        <input type="email" name="email" class="form-control" value="{{ user['email'] }}" maxlength="254" autocomplete="email" autocapitalize="off" spellcheck="false" required>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label text-muted">Phone</label>
-                        <input type="text" name="phone" class="form-control" value="{{ user['phone'] or '' }}" required>
+                        <input type="text" name="phone" class="form-control" value="{{ user['phone'] or '' }}" maxlength="30" autocomplete="tel" required>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label text-muted">Address</label>
-                        <input type="text" name="address" class="form-control" value="{{ user['address'] or '' }}" required>
+                        <input type="text" name="address" class="form-control" value="{{ user['address'] or '' }}" maxlength="255" autocomplete="street-address" required>
                     </div>
 
                     <hr>
