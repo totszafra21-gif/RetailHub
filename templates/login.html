@@ -112,7 +112,13 @@
 
         <div class="login-logo">🛍️</div>
         <div class="login-title">Welcome Back</div>
-        <div class="login-subtitle">Login to your RetailHub account</div>
+        <div class="login-subtitle">
+            {% if code_step %}
+            Enter the 6-digit code from your email
+            {% else %}
+            Login to your RetailHub account
+            {% endif %}
+        </div>
 
         <form method="POST">
 
@@ -124,6 +130,22 @@
             <div class="alert alert-danger">{{ error }}</div>
             {% endif %}
 
+            {% if code_step %}
+            <input type="hidden" name="step" value="verify_code">
+            <div class="mb-3">
+                <input
+                    type="text"
+                    name="code"
+                    class="form-control"
+                    placeholder="6-digit verification code"
+                    inputmode="numeric"
+                    pattern="[0-9]{6}"
+                    maxlength="6"
+                    autocomplete="one-time-code"
+                    required
+                >
+            </div>
+            {% else %}
             <div class="mb-3">
                 <input type="text" name="username" class="form-control" placeholder="Email or username" autocomplete="username" required>
             </div>
@@ -131,8 +153,9 @@
             <div class="mb-3">
                 <input type="password" name="password" class="form-control" placeholder="Password" autocomplete="current-password" required>
             </div>
+            {% endif %}
 
-            <button class="btn-login mt-2">Login</button>
+            <button class="btn-login mt-2">{% if code_step %}Verify Code{% else %}Login{% endif %}</button>
 
         </form>
 

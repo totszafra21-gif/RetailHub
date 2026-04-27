@@ -1,9 +1,14 @@
 import os
+import random
 import re
+import smtplib
+import ssl
+import time
+from email.message import EmailMessage
 
 from flask import Flask, render_template, request, redirect, session
 from supabase import create_client
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
 app.secret_key = "retailhub_secret"
@@ -26,6 +31,25 @@ FALLBACK_PRODUCTS = [
 ]
 
 EMAIL_PATTERN = re.compile(r"^[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}$", re.IGNORECASE)
+
+
+def load_env_file(path):
+    if not os.path.exists(path):
+        return
+
+    with open(path, "r", encoding="utf-8") as env_file:
+        for raw_line in env_file:
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+
+
+load_env_file(os.path.join(os.path.dirname(__file__), ".env.local"))
 
 
 def get_products_data(category=None):
@@ -114,6 +138,175 @@ def get_signup_redirect_url():
     return f"{base_url}/login"
 
 
+def get_login_code_expiry_seconds():
+    raw_value = clean_text(os.environ.get("LOGIN_CODE_EXPIRY_SECONDS"), 10)
+    return int(raw_value) if raw_value.isdigit() else 600
+
+
+def build_login_code_email(recipient_email, code):
+    message = EmailMessage()
+    sender_email = os.environ.get("MAIL_FROM") or os.environ.get("MAIL_USERNAME")
+    sender_name = clean_text(os.environ.get("MAIL_FROM_NAME"), 120)
+    if not sender_email:
+        raise RuntimeError("Missing MAIL_USERNAME or MAIL_FROM environment variable.")
+
+    message["Subject"] = "Your RetailHub login code"
+    message["From"] = f"{sender_name} <{sender_email}>" if sender_name else sender_email
+    message["To"] = recipient_email
+    message.set_content(
+        "\n".join(
+            [
+                "RetailHub login verification",
+                "",
+                f"Your 6-digit login code is: {code}",
+                f"This code expires in {get_login_code_expiry_seconds() // 60} minutes.",
+                "",
+                "If you did not try to log in, you can ignore this email."
+            ]
+        )
+    )
+    return message
+
+
+def resolve_mail_password(smtp_host):
+    smtp_password = clean_text(os.environ.get("MAIL_PASSWORD"))
+    placeholder = "PASTE_YOUR_16_CHARACTER_GOOGLE_APP_PASSWORD_HERE"
+    if not smtp_password or smtp_password.upper() == placeholder:
+        raise RuntimeError("Set MAIL_PASSWORD to your 16-character Google App Password.")
+
+    if "gmail.com" in smtp_host.lower():
+        smtp_password = smtp_password.replace(" ", "")
+        if len(smtp_password) != 16 or not smtp_password.isalnum():
+            raise RuntimeError("For Gmail SMTP, MAIL_PASSWORD must be a 16-character Google App Password.")
+
+    return smtp_password
+
+
+def send_email_message(message):
+    smtp_host = clean_text(os.environ.get("MAIL_SERVER"))
+    smtp_port_value = clean_text(os.environ.get("MAIL_PORT"), 6)
+    smtp_username = clean_text(os.environ.get("MAIL_USERNAME"))
+    use_tls = clean_text(os.environ.get("MAIL_USE_TLS", "true")).lower() != "false"
+    use_ssl = clean_text(os.environ.get("MAIL_USE_SSL", "false")).lower() == "true"
+
+    if not smtp_host or not smtp_port_value.isdigit():
+        raise RuntimeError("Missing MAIL_SERVER or MAIL_PORT environment variables.")
+
+    smtp_password = resolve_mail_password(smtp_host)
+
+    smtp_port = int(smtp_port_value)
+
+    if use_ssl:
+        with smtplib.SMTP_SSL(smtp_host, smtp_port, context=ssl.create_default_context(), timeout=20) as smtp:
+            if smtp_username and smtp_password:
+                smtp.login(smtp_username, smtp_password)
+            smtp.send_message(message)
+        return
+
+    with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as smtp:
+        if use_tls:
+            smtp.starttls(context=ssl.create_default_context())
+        if smtp_username and smtp_password:
+            smtp.login(smtp_username, smtp_password)
+        smtp.send_message(message)
+
+
+def send_login_code_email(recipient_email, code):
+    message = build_login_code_email(recipient_email, code)
+    send_email_message(message)
+
+
+def build_order_confirmation_email(recipient_email, order_id):
+    message = EmailMessage()
+    sender_email = os.environ.get("MAIL_FROM") or os.environ.get("MAIL_USERNAME")
+    sender_name = clean_text(os.environ.get("MAIL_FROM_NAME"), 120)
+    if not sender_email:
+        raise RuntimeError("Missing MAIL_USERNAME or MAIL_FROM environment variable.")
+
+    message["Subject"] = f"Order #{order_id} delivered confirmation"
+    message["From"] = f"{sender_name} <{sender_email}>" if sender_name else sender_email
+    message["To"] = recipient_email
+    message.set_content(
+        "\n".join(
+            [
+                "RetailHub order confirmation",
+                "",
+                f"Thanks for confirming you received Order #{order_id}.",
+                "Your order is now marked as completed.",
+                "",
+                "If you did not make this request, please contact support."
+            ]
+        )
+    )
+    return message
+
+
+def send_order_confirmation_email(recipient_email, order_id):
+    message = build_order_confirmation_email(recipient_email, order_id)
+    send_email_message(message)
+
+
+def create_login_code():
+    return f"{random.randint(0, 999999):06d}"
+
+
+def store_pending_login(local_user, auth_refresh_token=None):
+    session["pending_login_user"] = local_user["username"]
+    session["pending_login_email"] = normalize_email(local_user["email"])
+    session["pending_login_code"] = create_login_code()
+    session["pending_login_expires_at"] = int(time.time()) + get_login_code_expiry_seconds()
+    if auth_refresh_token:
+        session["pending_auth_refresh_token"] = auth_refresh_token
+    else:
+        session.pop("pending_auth_refresh_token", None)
+
+
+def clear_pending_login():
+    for key in [
+        "pending_login_user",
+        "pending_login_email",
+        "pending_login_code",
+        "pending_login_expires_at",
+        "pending_auth_refresh_token"
+    ]:
+        session.pop(key, None)
+
+
+def pending_login_state():
+    code = session.get("pending_login_code")
+    username = session.get("pending_login_user")
+    email = session.get("pending_login_email")
+    expires_at = session.get("pending_login_expires_at")
+    if not code or not username or not email or not expires_at:
+        clear_pending_login()
+        return None
+    return {
+        "code": str(code),
+        "username": username,
+        "email": email,
+        "expires_at": int(expires_at)
+    }
+
+
+def format_auth_error(exc, fallback_message):
+    details = clean_text(str(exc), 300)
+    return details or fallback_message
+
+
+def create_local_account(name, username, email, phone, address, raw_password):
+    return sync_local_user(
+        email,
+        {
+            "name": name,
+            "username": username,
+            "phone": phone,
+            "address": address
+        },
+        preferred_username=username,
+        extra_payload={"password": generate_password_hash(raw_password)}
+    )
+
+
 def persist_auth_session(auth_session):
     refresh_token = getattr(auth_session, "refresh_token", None)
     if refresh_token:
@@ -153,7 +346,7 @@ def restore_auth_session():
         return None
 
 
-def sync_local_user(email, user_metadata, preferred_username=None):
+def sync_local_user(email, user_metadata, preferred_username=None, extra_payload=None):
     email = normalize_email(email)
     local_user = get_user_by_email(email)
     metadata = user_metadata or {}
@@ -166,6 +359,8 @@ def sync_local_user(email, user_metadata, preferred_username=None):
         "phone": clean_text(metadata.get("phone"), 30),
         "address": clean_text(metadata.get("address"), 255)
     }
+    if extra_payload:
+        payload.update(extra_payload)
 
     if local_user:
         supabase.table("users").update(payload).eq("email", email).execute()
@@ -295,35 +490,14 @@ def signup():
             return render_template("signup.html", error="That username is already taken.")
 
         try:
-            auth_response = supabase.auth.sign_up(
-                email=email,
-                password=raw_password,
-                redirect_to=get_signup_redirect_url(),
-                data={
-                    "name": name,
-                    "username": username,
-                    "phone": phone,
-                    "address": address
-                }
-            )
-            auth_user = extract_auth_user(auth_response)
-
-            if not auth_user:
-                return render_template("signup.html", error="We couldn't start email verification right now.")
-
-            sync_local_user(email, getattr(auth_user, "user_metadata", {}) or {
-                "name": name,
-                "username": username,
-                "phone": phone,
-                "address": address
-            }, preferred_username=username)
+            create_local_account(name, username, email, phone, address, raw_password)
             return render_template(
                 "signup.html",
                 error=None,
-                success_message="Check your email and click the confirmation link before logging in."
+                success_message="Account created. Log in and we will send a 6-digit code to your email."
             )
-        except Exception:
-            return render_template("signup.html", error="We couldn't create your account right now.")
+        except Exception as exc:
+            return render_template("signup.html", error=format_auth_error(exc, "We couldn't create your account right now."))
 
     return render_template("signup.html", error=None, success_message=None)
 
@@ -331,7 +505,39 @@ def signup():
 # LOGIN
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    pending_login = pending_login_state()
+
     if request.method == "POST":
+        if request.form.get("step") == "verify_code":
+            submitted_code = clean_text(request.form.get("code"), 6)
+            pending_login = pending_login_state()
+
+            if not pending_login:
+                return render_template("login.html", error="Your login code expired. Please log in again.", notice=None, code_step=False)
+
+            if time.time() > pending_login["expires_at"]:
+                clear_pending_login()
+                return render_template("login.html", error="Your login code expired. Please log in again.", notice=None, code_step=False)
+
+            if submitted_code != pending_login["code"]:
+                return render_template(
+                    "login.html",
+                    error="Invalid verification code.",
+                    notice=f"We sent a 6-digit code to {pending_login['email']}.",
+                    code_step=True
+                )
+
+            refresh_token = session.get("pending_auth_refresh_token")
+            if refresh_token:
+                session["auth_refresh_token"] = refresh_token
+            else:
+                session.pop("auth_refresh_token", None)
+
+            session["user"] = pending_login["username"]
+            session["user_email"] = pending_login["email"]
+            clear_pending_login()
+            return redirect("/")
+
         identifier = clean_text(request.form["username"], 254)
         password = request.form["password"]
 
@@ -343,33 +549,56 @@ def login():
         email = normalize_email(user["email"]) if user else normalize_email(identifier)
 
         if not is_valid_email(email):
-            return render_template("login.html", error="Use your verified email or your existing username to log in.", notice=None)
+            return render_template("login.html", error="Use your email or your existing username to log in.", notice=None, code_step=False)
+
+        if user and user.get("password") and check_password_hash(user["password"], password):
+            local_user = {
+                "username": user["username"],
+                "email": normalize_email(user["email"])
+            }
+            try:
+                store_pending_login(local_user)
+                send_login_code_email(local_user["email"], session["pending_login_code"])
+                return render_template(
+                    "login.html",
+                    error=None,
+                    notice=f"We sent a 6-digit code to {local_user['email']}.",
+                    code_step=True
+                )
+            except Exception as exc:
+                clear_pending_login()
+                return render_template("login.html", error=format_auth_error(exc, "We couldn't send the login code right now. Check your email settings."), notice=None, code_step=False)
 
         try:
             auth_session = supabase.auth.sign_in(email=email, password=password)
+        except Exception as exc:
+            error_text = str(exc).lower()
+            if "email not confirmed" in error_text or "email_not_confirmed" in error_text:
+                return render_template("login.html", error="This account still depends on Supabase email confirmation. Confirm the email first or sign up again to use the 6-digit code flow.", notice=None, code_step=False)
+            return render_template("login.html", error="Invalid credentials", notice=None, code_step=False)
+
+        try:
             auth_user = getattr(auth_session, "user", None) or supabase.auth.user()
             local_user = sync_local_user(
                 email,
                 getattr(auth_user, "user_metadata", {}),
                 preferred_username=user["username"] if user else None
             )
-            persist_auth_session(auth_session)
-            session["user"] = local_user["username"]
-            session["user_email"] = local_user["email"]
-            return redirect("/")
+            store_pending_login(local_user, getattr(auth_session, "refresh_token", None))
+            send_login_code_email(local_user["email"], session["pending_login_code"])
         except Exception as exc:
-            if user and user.get("password") and check_password_hash(user["password"], password):
-                session["user"] = user["username"]
-                session["user_email"] = normalize_email(user["email"])
-                return redirect("/")
+            clear_pending_login()
+            return render_template("login.html", error=format_auth_error(exc, "We couldn't send the login code right now. Check your email settings."), notice=None, code_step=False)
 
-            error_text = str(exc).lower()
-            if "email not confirmed" in error_text or "email_not_confirmed" in error_text:
-                return render_template("login.html", error="Check your email and confirm your account before logging in.", notice=None)
-            return render_template("login.html", error="Invalid credentials")
+        return render_template(
+            "login.html",
+            error=None,
+            notice=f"We sent a 6-digit code to {local_user['email']}.",
+            code_step=True
+        )
 
-    notice = "Your email verification is enabled. Confirm your account through the link in your inbox before logging in." if request.args.get("verified") else None
-    return render_template("login.html", error=None, notice=notice)
+    notice = "Email confirmed. Log in and we will send a 6-digit code to your email." if request.args.get("verified") else None
+    return render_template("login.html", error=None, notice=notice, code_step=bool(pending_login))
 
 
 # SHOP
@@ -541,7 +770,46 @@ def my_orders():
         return redirect("/login")
 
     orders = supabase.table("orders").select("*").eq("username", session["user"]).order("created_at", desc=True).execute()
-    return render_template("my_orders.html", orders=orders.data)
+    notice = None
+    error = None
+    if request.args.get("confirmed") == "1":
+        notice = "Order confirmed. We sent a confirmation email and marked it as completed."
+    elif request.args.get("error") == "not_delivered":
+        error = "You can only confirm orders that are marked as Delivered."
+    elif request.args.get("error") == "not_found":
+        error = "Order not found."
+    elif request.args.get("error") == "email":
+        error = "We couldn't send the confirmation email. Please check your email settings and try again."
+    return render_template("my_orders.html", orders=orders.data, notice=notice, error=error)
+
+
+@app.route("/orders/confirm/<order_id>", methods=["POST"])
+def confirm_order_delivery(order_id):
+    if "user" not in session:
+        return redirect("/login")
+
+    result = supabase.table("orders").select("*").eq("id", order_id).execute()
+    if not result.data:
+        return redirect("/orders?error=not_found")
+
+    order = result.data[0]
+    if (order.get("username") or "") != session["user"]:
+        return redirect("/orders?error=not_found")
+
+    if (order.get("status") or "Pending") != "Delivered":
+        return redirect("/orders?error=not_delivered")
+
+    recipient_email = normalize_email(order.get("email"))
+    if not is_valid_email(recipient_email):
+        return redirect("/orders?error=email")
+
+    try:
+        send_order_confirmation_email(recipient_email, order_id)
+    except Exception:
+        return redirect("/orders?error=email")
+
+    supabase.table("orders").update({"status": "Completed"}).eq("id", order_id).execute()
+    return redirect("/orders?confirmed=1")
 
 
 # ADMIN DASHBOARD

@@ -6,6 +6,13 @@
 
     <h3 class="fw-bold mb-4">📦 My Orders</h3>
 
+    {% if notice %}
+    <div class="alert alert-success border-0 shadow-sm">{{ notice }}</div>
+    {% endif %}
+    {% if error %}
+    <div class="alert alert-danger border-0 shadow-sm">{{ error }}</div>
+    {% endif %}
+
     {% if orders %}
 
     <div class="row g-4">
@@ -78,6 +85,17 @@
                         </div>
 
                     </div>
+
+                    {% if order['status'] == 'Delivered' %}
+                    <hr>
+                    <div class="d-flex justify-content-end">
+                        <form method="POST" action="/orders/confirm/{{ order['id'] }}">
+                            <button type="submit" class="btn btn-success" style="border-radius:10px;">
+                                ✅ Confirm Received
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
 
                 </div>
             </div>
