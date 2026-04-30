@@ -52,13 +52,33 @@ def load_env_file(path):
 load_env_file(os.path.join(os.path.dirname(__file__), ".env.local"))
 
 
+def normalize_product_image(image_path):
+    candidate = clean_text(image_path, 255).replace("\\", "/")
+    if candidate.startswith("/static/"):
+        candidate = candidate[len("/static/"):]
+    elif candidate.startswith("static/"):
+        candidate = candidate[len("static/"):]
+    elif candidate and "/" not in candidate:
+        candidate = f"images/{candidate}"
+
+    if candidate:
+        absolute_path = os.path.join(app.static_folder, *candidate.split("/"))
+        if os.path.exists(absolute_path):
+            return candidate
+
+    return "images/laptop.jpg"
+
+
 def get_products_data(category=None):
     try:
         query = supabase.table("products").select("*")
         if category:
             query = query.eq("category", category)
         result = query.execute()
-        return result.data, None
+        products = result.data or []
+        for product in products:
+            product["image"] = normalize_product_image(product.get("image"))
+        return products, None
     except Exception:
         products = FALLBACK_PRODUCTS
         if category:
@@ -70,7 +90,9 @@ def get_product_data(item_id):
     try:
         result = supabase.table("products").select("*").eq("id", item_id).execute()
         if result.data:
-            return result.data[0]
+            product = result.data[0]
+            product["image"] = normalize_product_image(product.get("image"))
+            return product
     except Exception:
         pass
 

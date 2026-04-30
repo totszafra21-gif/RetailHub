@@ -268,6 +268,23 @@ def pending_login_state():
     }
 
 
+def normalize_product_image(image_path):
+    candidate = clean_text(image_path, 255).replace("\\", "/")
+    if candidate.startswith("/static/"):
+        candidate = candidate[len("/static/"):]
+    elif candidate.startswith("static/"):
+        candidate = candidate[len("static/"):]
+    elif candidate and "/" not in candidate:
+        candidate = f"images/{candidate}"
+
+    if candidate:
+        absolute_path = os.path.join(app.static_folder, *candidate.split("/"))
+        if os.path.exists(absolute_path):
+            return candidate
+
+    return "images/laptop.jpg"
+
+
 def format_auth_error(exc, fallback_message):
     details = clean_text(str(exc), 300)
     return details or fallback_message
@@ -573,7 +590,10 @@ def shop():
         result = supabase.table("products").select("*").eq("category", category).execute()
     else:
         result = supabase.table("products").select("*").execute()
-    return render_template("shop.html", products=result.data)
+    products = result.data or []
+    for product in products:
+        product["image"] = normalize_product_image(product.get("image"))
+    return render_template("shop.html", products=products)
 
 
 @app.route("/contact", methods=["GET", "POST"])
@@ -613,6 +633,7 @@ def add_to_cart(item_id):
     result = supabase.table("products").select("*").eq("id", item_id).execute()
     if result.data:
         p = result.data[0]
+        p["image"] = normalize_product_image(p.get("image"))
         cart.append({"id": p["id"], "name": p["name"],
                      "price": float(p["price"]), "image": p["image"], "qty": 1})
         session.modified = True

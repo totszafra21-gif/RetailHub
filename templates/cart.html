@@ -25,7 +25,8 @@
                 <tr>
                     <td>
                         <img src="{{ url_for('static', filename=item['image']) }}"
-                             style="width:70px; height:70px; object-fit:cover; border-radius:10px;">
+                             style="width:70px; height:70px; object-fit:cover; border-radius:10px;"
+                             onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/laptop.jpg') }}';">
                     </td>
                     <td class="fw-bold">{{ item['name'] }}</td>
                     <td>₱{{ item['price'] }}</td>

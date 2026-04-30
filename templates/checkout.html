@@ -25,7 +25,8 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div class="d-flex align-items-center gap-3">
                         <img src="{{ url_for('static', filename=item['image']) }}"
-                             style="width:60px; height:60px; object-fit:cover; border-radius:10px;">
+                             style="width:60px; height:60px; object-fit:cover; border-radius:10px;"
+                             onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/laptop.jpg') }}';">
                         <div>
                             <p class="mb-0 fw-bold">{{ item['name'] }}</p>
                             <small class="text-muted">x{{ item['qty'] }}</small>
@@ -131,7 +132,8 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div class="d-flex align-items-center gap-2">
                         <img src="{{ url_for('static', filename=item['image']) }}"
-                             style="width:50px; height:50px; object-fit:cover; border-radius:8px;">
+                             style="width:50px; height:50px; object-fit:cover; border-radius:8px;"
+                             onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/laptop.jpg') }}';">
                         <div>
                             <p class="mb-0 fw-bold">{{ item['name'] }}</p>
                             <small class="text-muted">x{{ item['qty'] }}</small>
