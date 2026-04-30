@@ -57,9 +57,10 @@
         <div class="col-md-3">
             <div class="card h-100 border-0 shadow-sm" style="border-radius:15px; overflow:hidden;">
 
-                <img src="{{ url_for('static', filename=p['image'] if p['image'] else 'images/default.jpg') }}"
+                <img src="{{ url_for('static', filename=p['image'] if p['image'] else 'images/laptop.jpg') }}"
                      class="card-img-top"
-                     style="height:220px; object-fit:cover;">
+                     style="height:220px; object-fit:cover;"
+                     onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/laptop.jpg') }}';">
 
                 <div class="card-body text-center d-flex flex-column justify-content-between">
                     <div>
