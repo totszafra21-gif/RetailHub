@@ -216,6 +216,70 @@ def send_login_code_email(recipient_email, code):
     send_email_message(message)
 
 
+def get_password_reset_code_expiry_seconds():
+    raw_value = clean_text(os.environ.get("PASSWORD_RESET_CODE_EXPIRY_SECONDS"), 10)
+    return int(raw_value) if raw_value.isdigit() else 900
+
+
+def build_password_reset_email(recipient_email, code):
+    message = EmailMessage()
+    sender_email = os.environ.get("MAIL_FROM") or os.environ.get("MAIL_USERNAME")
+    sender_name = clean_text(os.environ.get("MAIL_FROM_NAME"), 120)
+    if not sender_email:
+        raise RuntimeError("Missing MAIL_USERNAME or MAIL_FROM environment variable.")
+
+    minutes = max(1, get_password_reset_code_expiry_seconds() // 60)
+    message["Subject"] = "Your RetailHub password reset code"
+    message["From"] = f"{sender_name} <{sender_email}>" if sender_name else sender_email
+    message["To"] = recipient_email
+    message.set_content(
+        "\n".join(
+            [
+                "RetailHub password reset",
+                "",
+                f"Your 6-digit password reset code is: {code}",
+                f"This code expires in {minutes} minutes.",
+                "",
+                "If you did not request a password reset, you can ignore this email."
+            ]
+        )
+    )
+    return message
+
+
+def send_password_reset_code_email(recipient_email, code):
+    message = build_password_reset_email(recipient_email, code)
+    send_email_message(message)
+
+
+def build_password_changed_email(recipient_email):
+    message = EmailMessage()
+    sender_email = os.environ.get("MAIL_FROM") or os.environ.get("MAIL_USERNAME")
+    sender_name = clean_text(os.environ.get("MAIL_FROM_NAME"), 120)
+    if not sender_email:
+        raise RuntimeError("Missing MAIL_USERNAME or MAIL_FROM environment variable.")
+
+    message["Subject"] = "Your RetailHub password was changed"
+    message["From"] = f"{sender_name} <{sender_email}>" if sender_name else sender_email
+    message["To"] = recipient_email
+    message.set_content(
+        "\n".join(
+            [
+                "RetailHub security notice",
+                "",
+                "Your RetailHub password was just changed.",
+                "If you did not do this, reset your password immediately and contact support."
+            ]
+        )
+    )
+    return message
+
+
+def send_password_changed_email(recipient_email):
+    message = build_password_changed_email(recipient_email)
+    send_email_message(message)
+
+
 def build_order_confirmation_email(recipient_email, order_id):
     message = EmailMessage()
     sender_email = os.environ.get("MAIL_FROM") or os.environ.get("MAIL_USERNAME")
@@ -284,6 +348,36 @@ def pending_login_state():
         "code": str(code),
         "username": username,
         "email": email,
+        "expires_at": int(expires_at)
+    }
+
+
+def store_pending_password_reset(email):
+    session["pending_reset_email"] = normalize_email(email)
+    session["pending_reset_code"] = create_login_code()
+    session["pending_reset_expires_at"] = int(time.time()) + get_password_reset_code_expiry_seconds()
+
+
+def clear_pending_password_reset():
+    for key in ["pending_reset_email", "pending_reset_code", "pending_reset_expires_at"]:
+        session.pop(key, None)
+
+
+def pending_password_reset_state():
+    code = session.get("pending_reset_code")
+    email = session.get("pending_reset_email")
+    expires_at = session.get("pending_reset_expires_at")
+    if not code or not email or not expires_at:
+        clear_pending_password_reset()
+        return None
+
+    if time.time() > int(expires_at):
+        clear_pending_password_reset()
+        return None
+
+    return {
+        "code": str(code),
+        "email": normalize_email(email),
         "expires_at": int(expires_at)
     }
 
@@ -536,7 +630,7 @@ def login():
             session["user"] = pending_login["username"]
             session["user_email"] = pending_login["email"]
             clear_pending_login()
-            return redirect("/")
+            return redirect("/shop")
 
         identifier = clean_text(request.form["username"], 254)
         password = request.form["password"]
@@ -597,8 +691,132 @@ def login():
             code_step=True
         )
 
-    notice = "Email confirmed. Log in and we will send a 6-digit code to your email." if request.args.get("verified") else None
+    notice = None
+    if request.args.get("reset"):
+        notice = "Password reset successful. Log in and we will send a 6-digit code to your email."
+    elif request.args.get("verified"):
+        notice = "Email confirmed. Log in and we will send a 6-digit code to your email."
     return render_template("login.html", error=None, notice=notice, code_step=bool(pending_login))
+
+
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    pending_reset = pending_password_reset_state()
+
+    if request.method == "POST":
+        if request.form.get("step") == "verify_reset":
+            submitted_code = clean_text(request.form.get("code"), 6)
+            new_password = request.form.get("new_password") or ""
+            confirm_password = request.form.get("confirm_password") or ""
+            pending_reset = pending_password_reset_state()
+
+            if not pending_reset:
+                return render_template(
+                    "forgot_password.html",
+                    error="Your reset code expired. Please request a new one.",
+                    notice=None,
+                    code_step=False,
+                    email=""
+                )
+
+            if submitted_code != pending_reset["code"]:
+                return render_template(
+                    "forgot_password.html",
+                    error="Invalid reset code.",
+                    notice=f"We sent a 6-digit code to {pending_reset['email']}.",
+                    code_step=True,
+                    email=pending_reset["email"]
+                )
+
+            if len(new_password) < 8:
+                return render_template(
+                    "forgot_password.html",
+                    error="New password must be at least 8 characters.",
+                    notice=f"We sent a 6-digit code to {pending_reset['email']}.",
+                    code_step=True,
+                    email=pending_reset["email"]
+                )
+
+            if new_password != confirm_password:
+                return render_template(
+                    "forgot_password.html",
+                    error="Passwords do not match.",
+                    notice=f"We sent a 6-digit code to {pending_reset['email']}.",
+                    code_step=True,
+                    email=pending_reset["email"]
+                )
+
+            user = get_user_by_email(pending_reset["email"])
+            if not user:
+                clear_pending_password_reset()
+                return render_template(
+                    "forgot_password.html",
+                    error="No account is linked to that email address.",
+                    notice=None,
+                    code_step=False,
+                    email=""
+                )
+
+            try:
+                supabase.table("users").update({"password": generate_password_hash(new_password)}).eq("email", pending_reset["email"]).execute()
+            except Exception:
+                return render_template(
+                    "forgot_password.html",
+                    error="We couldn't reset your password right now. Please try again later.",
+                    notice=None,
+                    code_step=True,
+                    email=pending_reset["email"]
+                )
+
+            clear_pending_password_reset()
+            try:
+                send_password_changed_email(pending_reset["email"])
+            except Exception:
+                pass
+
+            return redirect("/login?reset=1")
+
+        email = normalize_email(request.form.get("email"))
+        if not is_valid_email(email):
+            return render_template(
+                "forgot_password.html",
+                error="Please enter a valid email address.",
+                notice=None,
+                code_step=False,
+                email=email
+            )
+
+        user = get_user_by_email(email)
+        store_pending_password_reset(email)
+
+        try:
+            if user:
+                send_password_reset_code_email(email, session["pending_reset_code"])
+        except Exception as exc:
+            clear_pending_password_reset()
+            return render_template(
+                "forgot_password.html",
+                error=format_auth_error(exc, "We couldn't send the reset code right now. Check your email settings."),
+                notice=None,
+                code_step=False,
+                email=email
+            )
+
+        return render_template(
+            "forgot_password.html",
+            error=None,
+            notice=f"If {email} matches an account, we sent a 6-digit reset code.",
+            code_step=True,
+            email=email
+        )
+
+    return render_template(
+        "forgot_password.html",
+        error=None,
+        notice=None,
+        code_step=bool(pending_reset),
+        email=pending_reset["email"] if pending_reset else ""
+    )
 
 
 # SHOP
@@ -1010,6 +1228,57 @@ def update_profile():
         return render_template("profile.html", user=current_user, error="We couldn't update your profile right now.", notice=None)
 
     return redirect("/profile")
+
+
+@app.route("/profile/password", methods=["POST"])
+def update_password():
+    if "user" not in session:
+        return redirect("/login")
+
+    current_password = request.form.get("current_password") or ""
+    new_password = request.form.get("new_password") or ""
+    confirm_password = request.form.get("confirm_password") or ""
+    user = get_user_by_username(session["user"]) or {}
+
+    if not user:
+        session.clear()
+        return redirect("/login")
+
+    if len(new_password) < 8:
+        return render_template("profile.html", user=user, error="New password must be at least 8 characters.", notice=None)
+
+    if new_password != confirm_password:
+        return render_template("profile.html", user=user, error="Passwords do not match.", notice=None)
+
+    existing_hash = user.get("password")
+    if existing_hash and not check_password_hash(existing_hash, current_password):
+        return render_template("profile.html", user=user, error="Current password is incorrect.", notice=None)
+
+    try:
+        supabase.table("users").update({"password": generate_password_hash(new_password)}).eq("username", session["user"]).execute()
+        auth_session = restore_auth_session()
+        if auth_session:
+            try:
+                supabase.auth.update({"password": new_password})
+            except Exception:
+                pass
+    except Exception:
+        return render_template("profile.html", user=user, error="We couldn't update your password right now.", notice=None)
+
+    recipient = normalize_email(user.get("email"))
+    if is_valid_email(recipient):
+        try:
+            send_password_changed_email(recipient)
+        except Exception:
+            pass
+
+    refreshed_user = get_user_by_username(session["user"]) or user
+    return render_template(
+        "profile.html",
+        user=refreshed_user,
+        error=None,
+        notice=f"Password updated. We sent a confirmation email to {recipient}." if is_valid_email(recipient) else "Password updated."
+    )
 
 
 # DELETE ACCOUNT

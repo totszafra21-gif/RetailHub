@@ -502,7 +502,7 @@ def login():
             session["user"] = pending_login["username"]
             session["user_email"] = pending_login["email"]
             clear_pending_login()
-            return redirect("/")
+            return redirect("/shop")
 
         identifier = clean_text(request.form["username"], 254)
         password = request.form["password"]

@@ -41,9 +41,10 @@
                         </li>
                     </ul>
 
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-dark w-100" onclick="toggleEdit()">✏️ Edit Profile</button>
-                        <button class="btn btn-danger w-100" onclick="toggleDelete()">🗑️ Delete Account</button>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-dark w-100" type="button" onclick="showSection('editMode')">✏️ Edit Profile</button>
+                        <button class="btn btn-outline-dark w-100" type="button" onclick="showSection('passwordMode')">🔒 Change Password</button>
+                        <button class="btn btn-danger w-100" type="button" onclick="showSection('deleteMode')">🗑️ Delete Account</button>
                     </div>
 
                 </div>
@@ -77,7 +78,38 @@
 
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-dark w-100">💾 Save Changes</button>
-                            <button type="button" class="btn btn-outline-secondary w-100" onclick="toggleEdit()">Cancel</button>
+                            <button type="button" class="btn btn-outline-secondary w-100" onclick="showSection('viewMode')">Cancel</button>
+                        </div>
+
+                    </form>
+
+                </div>
+
+                <!-- PASSWORD MODE -->
+                <div class="card-body px-4 py-4 d-none" id="passwordMode">
+
+                    <h5 class="fw-bold mb-3">🔒 Change Password</h5>
+
+                    <form method="POST" action="/profile/password">
+
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Current Password</label>
+                            <input type="password" name="current_password" class="form-control" placeholder="Enter current password (if set)" autocomplete="current-password">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-muted">New Password</label>
+                            <input type="password" name="new_password" class="form-control" placeholder="New password (min 8 chars)" minlength="8" autocomplete="new-password" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Confirm New Password</label>
+                            <input type="password" name="confirm_password" class="form-control" placeholder="Confirm new password" minlength="8" autocomplete="new-password" required>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-dark w-100">Update Password</button>
+                            <button type="button" class="btn btn-outline-secondary w-100" onclick="showSection('viewMode')">Cancel</button>
                         </div>
 
                     </form>
@@ -94,7 +126,7 @@
                         <form method="POST" action="/profile/delete">
                             <div class="d-flex gap-2 justify-content-center">
                                 <button type="submit" class="btn btn-danger px-4">Yes, Delete</button>
-                                <button type="button" class="btn btn-outline-secondary px-4" onclick="toggleDelete()">Cancel</button>
+                                <button type="button" class="btn btn-outline-secondary px-4" onclick="showSection('viewMode')">Cancel</button>
                             </div>
                         </form>
                     </div>
@@ -108,14 +140,11 @@
 </div>
 
 <script>
-    function toggleEdit() {
-        document.getElementById("viewMode").classList.toggle("d-none");
-        document.getElementById("editMode").classList.toggle("d-none");
-    }
-
-    function toggleDelete() {
-        document.getElementById("viewMode").classList.toggle("d-none");
-        document.getElementById("deleteMode").classList.toggle("d-none");
+    function showSection(sectionId) {
+        ["viewMode", "editMode", "passwordMode", "deleteMode"].forEach(function(id) {
+            document.getElementById(id).classList.add("d-none");
+        });
+        document.getElementById(sectionId).classList.remove("d-none");
     }
 </script>
 
