@@ -30,6 +30,14 @@ FALLBACK_PRODUCTS = [
     {"id": 5, "name": "Wireless Headset", "price": 799, "category": "accessories", "image": "images/headset.jpg"},
 ]
 
+IMAGE_ALIASES = {
+    "images/beast gaming mouse.jpg": "images/beast-gaming-mouse.jpg",
+    "images/lebron 20.jpg": "images/lebron-20.jpg",
+    "images/kobe 8.jpg": "images/kobe-8.jpg",
+    "images/realme c53.jpg": "images/realme-c53.jpg",
+    "images/smart watch.jpg": "images/smart-watch.jpg",
+}
+
 EMAIL_PATTERN = re.compile(r"^[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}$", re.IGNORECASE)
 
 
@@ -60,6 +68,8 @@ def normalize_product_image(image_path):
         candidate = candidate[len("static/"):]
     elif candidate and "/" not in candidate:
         candidate = f"images/{candidate}"
+
+    candidate = IMAGE_ALIASES.get(candidate.lower(), candidate)
 
     if candidate:
         absolute_path = os.path.join(app.static_folder, *candidate.split("/"))
@@ -1089,8 +1099,10 @@ def admin_products():
     if guard:
         return guard
 
-    products = supabase.table("products").select("*").execute()
-    return render_template("admin_products.html", products=products.data, active_page="products")
+    products = supabase.table("products").select("*").execute().data or []
+    for product in products:
+        product["image"] = normalize_product_image(product.get("image"))
+    return render_template("admin_products.html", products=products, active_page="products")
 
 
 @app.route("/admin/contacts")
@@ -1112,7 +1124,7 @@ def admin_add_product():
         "name": request.form["name"],
         "price": request.form["price"],
         "category": request.form["category"],
-        "image": request.form["image"]
+        "image": normalize_product_image(request.form["image"])
     }).execute()
     return redirect("/admin/products")
 
@@ -1126,7 +1138,7 @@ def admin_edit_product():
         "name": request.form["name"],
         "price": request.form["price"],
         "category": request.form["category"],
-        "image": request.form["image"]
+        "image": normalize_product_image(request.form["image"])
     }).eq("id", request.form["id"]).execute()
     return redirect("/admin/products")
 

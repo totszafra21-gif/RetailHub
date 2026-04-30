@@ -31,7 +31,7 @@
                 <tr>
                     <td>{{ product["id"] }}</td>
                     <td>
-                        <img src="/static/{{ product['image'] }}" alt="{{ product['name'] }}" style="width:56px; height:56px; object-fit:cover; border-radius:12px;">
+                        <img src="{{ url_for('static', filename=product['image']) }}" alt="{{ product['name'] }}" style="width:56px; height:56px; object-fit:cover; border-radius:12px;" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/laptop.jpg') }}';">
                     </td>
                     <td class="fw-bold">{{ product["name"] }}</td>
                     <td>{{ product["category"] }}</td>
